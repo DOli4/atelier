@@ -202,6 +202,13 @@ export default function App() {
     const ctx = gsap.context(() => {
       if (isReduced) return;
 
+      // GSAP's ticker is requestAnimationFrame-driven, and rAF does not fire in a
+      // background tab. A .from() sets its start state immediately, so opening the
+      // site in an unfocused tab would otherwise leave the hero pinned at opacity 0
+      // — invisible until the tab is focused. Skip the entrance in that case and
+      // let the content stand at its natural state.
+      if (document.visibilityState === "hidden") return;
+
       gsap.timeline({ defaults: { ease: "power3.out" } })
         .from("[data-panel]", { y: 40, opacity: 0, duration: 1 })
         .from(".at-ltr", { yPercent: 115, opacity: 0, duration: 0.85, stagger: 0.04 }, "-=0.6")

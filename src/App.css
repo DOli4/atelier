@@ -12,17 +12,35 @@
    ============================================================ */
 
 .atelier-page {
-  --bg-0: #0e1218;      /* deepest slate, page floor */
-  --bg-1: #171c25;      /* base slate */
-  --panel: rgba(19, 24, 32, 0.66);   /* the frosted hero panel */
-  --panel-2: rgba(22, 28, 37, 0.5);  /* secondary glass surfaces */
-  --ink: #eef1f5;       /* near-white — headings */
-  --ink-2: #98a1af;     /* muted body copy */
-  --muted: #6d7684;     /* labels, meta */
-  --line: rgba(255, 255, 255, 0.07);
-  --line-2: rgba(255, 255, 255, 0.12);
+  /* Ground is deliberately NOT near-black. Surfaces sit LIGHTER than the
+     ground they rest on, which is what makes them read as lifted rather
+     than as holes cut into the page. */
+  --bg-0: #151a22;      /* page floor */
+  --bg-1: #1c222c;      /* raised ground */
+  --surface: #232a35;   /* card face — lighter than the ground */
+  --surface-2: #2b333f; /* hover / elevated card face */
+  --panel: rgba(35, 42, 53, 0.72);
+  --panel-2: rgba(31, 38, 48, 0.6);
+  --ink: #f4f7fa;
+  --ink-2: #aab4c2;     /* lifted from #98a1af for comfortable body contrast */
+  --muted: #808b99;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-2: rgba(255, 255, 255, 0.15);
   --gold: #c8a04a;
   --gold-2: #e3c274;
+  --gold-line: rgba(200, 160, 74, 0.42);
+
+  /* Elevation scale — the 3D feel comes from a consistent ladder, not from
+     one-off shadow values scattered per component. */
+  --e1: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --e2: 0 10px 24px -8px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --e3: 0 26px 60px -18px rgba(0, 0, 0, 0.62), 0 6px 16px rgba(0, 0, 0, 0.34);
+  --e4: 0 50px 110px -30px rgba(0, 0, 0, 0.72), 0 12px 28px rgba(0, 0, 0, 0.38);
+
+  /* Space scale. Expensive means unhurried — sections get real room. */
+  --sp-sec: clamp(120px, 15vw, 240px);
+  --sp-block: clamp(48px, 6vw, 88px);
+  --sp-card: clamp(34px, 3.6vw, 52px);
 
   /* Tracking scale — the core of the design system */
   --track-hero: 0.4em;
@@ -35,7 +53,7 @@
   z-index: 5000;
   overflow-y: auto;
   overflow-x: hidden;
-  background: linear-gradient(180deg, var(--bg-1), var(--bg-0) 55%, #0a0d12);
+  background: linear-gradient(180deg, var(--bg-1), var(--bg-0) 55%, #11151c);
   color: var(--ink);
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size: 16px;
@@ -738,4 +756,96 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .at-bd img { transform: none !important; }
+}
+
+/* ============================================================
+   ELEVATION, SPACE AND SEPARATION  (senior pass)
+
+   Three changes carry the "expensive" feel:
+   1. Surfaces sit LIGHTER than their ground and cast a real shadow, so
+      they read as lifted objects rather than holes in the page.
+   2. Space is generous and comes from one scale, not per-component
+      guesses — sections get --sp-sec, cards get --sp-card.
+   3. Where a gradient is too subtle to register against a photograph,
+      a gold hairline does the separating instead.
+   ============================================================ */
+
+/* --- Sections breathe --- */
+.at-section { padding-top: var(--sp-sec); padding-bottom: 0; }
+.at-bd-inner { padding-block: var(--sp-sec); gap: var(--sp-block); }
+.at-bd-sec { min-height: auto; }
+.at-bd-sec.at-short { min-height: auto; }
+
+/* --- Gold hairline separator, for boundaries a gradient cannot carry --- */
+.at-bridge { position: relative; }
+.at-bridge::before {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(1180px, 82vw); height: 1px; z-index: 1;
+  background: linear-gradient(90deg, transparent, var(--gold-line) 22%, var(--gold-line) 78%, transparent);
+}
+/* A small gold lozenge centred on the rule — the seam becomes a deliberate
+   piece of punctuation rather than an absence. */
+.at-bridge.is-tall::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 6px; height: 6px; z-index: 2;
+  background: var(--gold);
+  box-shadow: 0 0 14px 2px rgba(200, 160, 74, 0.4);
+  opacity: 0.9;
+  /* override the noise layer's full-bleed rect */
+  background-image: none; mix-blend-mode: normal;
+}
+
+/* --- Cards become lifted objects --- */
+.at-grid {
+  background: var(--surface);
+  border-color: var(--line-2);
+  box-shadow: var(--e3);
+}
+.at-cell {
+  padding: var(--sp-card);
+  border-left-color: var(--line-2);
+  transition: background 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.at-cell:hover { background: var(--surface-2); }
+
+.at-stats {
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--e3);
+}
+.at-stat { padding: clamp(48px, 6vw, 80px) 24px; border-left-color: var(--line-2); }
+
+.at-slab {
+  background: rgba(35, 42, 53, 0.82);
+  border-color: var(--line-2);
+  box-shadow: var(--e4);
+  padding: var(--sp-card);
+}
+.at-final {
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--e4);
+  padding: clamp(64px, 8vw, 110px) clamp(32px, 5vw, 72px);
+  gap: 26px;
+}
+.at-panel { box-shadow: var(--e4); border-color: var(--line-2); }
+
+/* Section headings get air beneath them */
+.at-sec-head { gap: 22px; }
+.at-bd-h + * { margin-top: 8px; }
+
+/* --- Warmer, lighter copy so the page is not oppressive --- */
+.at-cell-d, .at-lede, .at-slab-sub, .at-triad p { color: var(--ink-2); }
+
+/* --- The gold rule reads as light, not paint --- */
+.at-rule { opacity: 0.55; box-shadow: 0 0 22px 1px rgba(200, 160, 74, 0.22); }
+
+/* Backgrounds sit further back so lifted surfaces separate from them */
+.at-bd img { filter: saturate(0.34) brightness(0.3); }
+.at-bd.is-lift img { filter: saturate(0.5) brightness(0.44); }
+
+@media (max-width: 620px) {
+  .at-bridge::before { width: 82vw; }
 }
