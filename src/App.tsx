@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, lazy, Suspense } from "react";
+import { useEffect, useRef, useState, lazy, Suspense, type RefObject } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -82,6 +82,41 @@ function WhenNear({ children, className }: { children: React.ReactNode; classNam
   return <div className={className} ref={ref}>{near && children}</div>;
 }
 
+
+/**
+ * Pointer position as two root-level vars in viewport pixels.
+ *
+ * Ported from the CV project's drill dashboard. Because the card gradients use
+ * background-attachment: fixed (viewport space), ONE pair of vars lights up
+ * every card at once — no per-card listeners. Writes are rAF-coalesced so
+ * there is a single style recalc per frame rather than one per event, and it
+ * is mouse-only: on touch the glow would just freeze wherever you last tapped.
+ */
+function usePointerVars() {
+  useEffect(() => {
+    if (!matchMedia("(hover: hover)").matches) return;
+    const root = document.documentElement;
+    let raf = 0, x = 0, y = 0;
+    const onMove = (e: PointerEvent) => {
+      x = e.clientX; y = e.clientY;
+      if (!raf) {
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          root.style.setProperty("--sx", String(x));
+          root.style.setProperty("--sy", String(y));
+        });
+      }
+    };
+    addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      removeEventListener("pointermove", onMove);
+      cancelAnimationFrame(raf);
+      root.style.removeProperty("--sx");
+      root.style.removeProperty("--sy");
+    };
+  }, []);
+}
+
 function Ornament() {
   return <span className="at-orn" aria-hidden><i /><b /><i /></span>;
 }
@@ -135,6 +170,80 @@ function SplitWord({ text, className }: { text: string; className: string }) {
     <span className={className} aria-label={text}>
       {text.split("").map((ch, i) => <span className="at-ltr" key={i} aria-hidden>{ch}</span>)}
     </span>
+  );
+}
+
+
+/**
+ * FOUR MOVES as a pinned horizontal run.
+ *
+ * The section pins while the four cards travel sideways, so downward scrolling
+ * reads as moving along the process rather than down a list — and the
+ * jellyfish stays hanging at centre while they sweep past it.
+ *
+ * The page is a position:fixed scroll container, so ScrollTrigger has to be
+ * pointed at that element rather than the window. Narrow screens and
+ * reduced-motion fall back to a native snap strip: pinning a horizontal run
+ * fights the vertical scroll gesture on touch.
+ */
+function HorizontalMoves({ scrollerRef }: { scrollerRef: RefObject<HTMLDivElement | null> }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [native, setNative] = useState(false);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    const wrap = wrapRef.current;
+    const track = trackRef.current;
+    if (reduced() || window.innerWidth < 900 || !scroller || !wrap || !track) {
+      setNative(true);
+      return;
+    }
+    const ctx = gsap.context(() => {
+      const distance = () => Math.max(0, track.scrollWidth - wrap.clientWidth);
+
+      // The horizontal run itself. Held in a variable because each card's own
+      // trigger needs it as `containerAnimation` — that is what lets a trigger
+      // resolve positions along a horizontally-moving track instead of against
+      // the vertical scroll.
+      const run = gsap.to(track, {
+        x: () => -distance(),
+        ease: "none",
+        scrollTrigger: {
+          trigger: wrap, start: "center center", end: () => `+=${distance() + 200}`,
+          scrub: 0.7, pin: true, scroller, invalidateOnRefresh: true,
+          anticipatePin: 1,
+        },
+      });
+
+      // Each card resolves as it travels into the middle of the frame.
+      gsap.utils.toArray<HTMLElement>(".at-move").forEach((card) => {
+        gsap.fromTo(card,
+          { opacity: 0.3, scale: 0.9, rotateY: 14 },
+          {
+            opacity: 1, scale: 1, rotateY: 0, ease: "power2.out",
+            scrollTrigger: {
+              trigger: card, containerAnimation: run,
+              start: "left 90%", end: "left 50%", scrub: true,
+            },
+          });
+      });
+    });
+    return () => ctx.revert();
+  }, [scrollerRef]);
+
+  return (
+    <div className={`at-hmoves${native ? " is-native" : ""}`} ref={wrapRef}>
+      <div className="at-htrack" ref={trackRef}>
+        {process.map((s) => (
+          <article className="at-move at-pane" key={s.k}>
+            <span className="at-cell-k">{s.k}</span>
+            <h3 className="at-cell-t">{s.t}</h3>
+            <p className="at-cell-d">{s.d}</p>
+          </article>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -207,6 +316,7 @@ function Hero({ mail }: { mail: (s: string) => string }) {
 
 export default function App() {
   const root = useRef<HTMLDivElement>(null);
+  usePointerVars();
 
   useEffect(() => {
     const scroller = root.current;
@@ -338,12 +448,6 @@ export default function App() {
         {/* 02 — MONOLITH, with the orbiting word ring */}
         <section className="at-bd-sec at-mono" id="at-mono">
           <Backdrop shot={img.monolith} tex={texture.willow} texOpacity={0.26} tone="is-lift" />
-          <WhenNear className="at-jelly">
-            <Suspense fallback={null}>
-              <Jellyfish loop={20} />
-            </Suspense>
-          </WhenNear>
-
           <div className="at-orbit" aria-hidden>
             <div className="at-orbit-stage">
               {ORBIT_WORDS.map((w, i) => (
@@ -382,18 +486,17 @@ export default function App() {
         {/* 03 — PROCESS, carried by the refracted-glass frame */}
         <section className="at-bd-sec" id="at-process">
           <Backdrop shot={img.glass} tex={texture.concrete} texOpacity={0.12} />
+
+          <WhenNear className="at-jelly">
+            <Suspense fallback={null}>
+              <Jellyfish loop={20} />
+            </Suspense>
+          </WhenNear>
+
           <div className="at-bd-inner">
             <p className="at-label" data-reveal>03 — HOW IT WORKS</p>
             <h2 className="at-bd-h" data-reveal>FOUR MOVES</h2>
-            <div className="at-grid at-grid-4 at-glass" data-stagger>
-              {process.map((s) => (
-                <article className="at-cell" key={s.k}>
-                  <span className="at-cell-k">{s.k}</span>
-                  <h3 className="at-cell-t">{s.t}</h3>
-                  <p className="at-cell-d">{s.d}</p>
-                </article>
-              ))}
-            </div>
+            <HorizontalMoves scrollerRef={root} />
           </div>
         </section>
 
@@ -422,7 +525,7 @@ export default function App() {
             <h2 className="at-bd-h" data-reveal>WHY WORK<br />WITH ME</h2>
             <div className="at-grid at-grid-4 at-glass" data-stagger>
               {promises.map((p) => (
-                <article className="at-cell" key={p.t}>
+                <article className="at-cell at-pane" key={p.t}>
                   <h3 className="at-cell-t">{p.t}</h3>
                   <p className="at-cell-d">{p.d}</p>
                 </article>
@@ -438,19 +541,19 @@ export default function App() {
           <Backdrop shot={img.car} tex={texture.streaks} texOpacity={0.14} />
           <div className="at-bd-inner">
             <div className="at-stats at-glass" data-reveal>
-              <div className="at-stat">
+              <div className="at-stat at-pane">
                 <strong><span data-count="22">0</span></strong>
                 <span className="at-meta">DISTINCTIONS EARNED</span>
               </div>
-              <div className="at-stat">
+              <div className="at-stat at-pane">
                 <strong><span data-count="100">0</span>%</strong>
                 <span className="at-meta">CUSTOM-CODED</span>
               </div>
-              <div className="at-stat">
+              <div className="at-stat at-pane">
                 <strong><span data-count="0">0</span></strong>
                 <span className="at-meta">TEMPLATES USED</span>
               </div>
-              <div className="at-stat">
+              <div className="at-stat at-pane">
                 <strong>&infin;</strong>
                 <span className="at-meta">REVISIONS UNTIL RIGHT</span>
               </div>
