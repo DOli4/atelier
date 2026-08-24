@@ -705,3 +705,48 @@
 @media (prefers-reduced-motion: reduce) {
   .at-plate, .at-band-img, .at-close-img { transform: none !important; }
 }
+
+/* ============================================================
+   IMAGE BRIDGES
+
+   The gap between two image sections. The gradient runs from the
+   perceived colour of the frame above to that of the frame below
+   (see EDGE in App.tsx — sampled, then pushed through the same
+   filter/overlay maths the CSS applies), so consecutive images hand
+   off to one another instead of meeting at a hard seam.
+   ============================================================ */
+.at-bridge {
+  display: block; width: 100%;
+  height: clamp(70px, 11vh, 140px);
+  background: linear-gradient(180deg, var(--from), var(--to));
+  /* The seam is where banding shows first — a hair of noise hides it. */
+  position: relative;
+}
+.at-bridge.is-tall { height: clamp(110px, 18vh, 240px); }
+.at-bridge::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.035; mix-blend-mode: overlay; pointer-events: none;
+}
+
+/* The bridges now do the joining, so the image sections lose their hard
+   rules and their own top/bottom margins. */
+.at-mono, .at-band, .at-close { margin-top: 0; border-block: none; border-top: none; }
+
+/* Let each frame's own overlay fade toward the bridge colour at its edges,
+   so the handoff is continuous rather than a step at the boundary. */
+.at-mono-bg::after {
+  background:
+    radial-gradient(75% 60% at 50% 50%, transparent, rgba(10, 13, 18, 0.8)),
+    linear-gradient(180deg, rgba(21, 27, 33, 0.95), rgba(10, 13, 18, 0.45) 34%, rgba(10, 13, 18, 0.96));
+}
+.at-band::after {
+  background:
+    linear-gradient(100deg, rgba(10, 13, 18, 0.9) 8%, rgba(10, 13, 18, 0.45) 60%, rgba(10, 13, 18, 0.8)),
+    linear-gradient(180deg, rgba(28, 30, 33, 0.9), transparent 22%, transparent 78%, rgba(12, 15, 19, 0.95));
+}
+.at-close::after {
+  background:
+    radial-gradient(70% 60% at 50% 50%, rgba(10, 13, 18, 0.55), rgba(10, 13, 18, 0.93)),
+    linear-gradient(180deg, rgba(29, 31, 34, 0.85), transparent 26%);
+}

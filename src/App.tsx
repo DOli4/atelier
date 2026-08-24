@@ -65,6 +65,40 @@ function Ornament() {
   return <span className="at-orn" aria-hidden><i /><b /><i /></span>;
 }
 
+/**
+ * Perceived edge colours of each image section.
+ *
+ * These are NOT the raw pixel values — they were sampled from the top/bottom
+ * strip of each file and then pushed through the same pipeline the CSS applies
+ * (saturate → brightness → contrast → composite the section's overlay), so they
+ * match what the eye actually sees at that boundary. Re-derive them if a
+ * section's filter or overlay alpha changes, or the seam will show.
+ */
+const EDGE = {
+  page: "#0a0d12",
+  silkBottom: "#090b10",
+  monolithTop: "#151b21",
+  monolithBottom: "#0a0d12",
+  oceanTop: "#1c1e21",
+  oceanBottom: "#0c0f13",
+  cloudsTop: "#1d1f22",
+} as const;
+
+/**
+ * The gap between two image sections, filled with a gradient that runs from the
+ * lower edge of the frame above to the upper edge of the frame below — so the
+ * images hand off to each other instead of butting into a hard seam.
+ */
+function Bridge({ from, to, tall }: { from: string; to: string; tall?: boolean }) {
+  return (
+    <span
+      className={`at-bridge${tall ? " is-tall" : ""}`}
+      aria-hidden
+      style={{ ["--from" as string]: from, ["--to" as string]: to }}
+    />
+  );
+}
+
 /** The small gold photographer mark that sits on an image and links out. */
 function ShotCredit({ c }: { c: Credit }) {
   return (
@@ -431,6 +465,7 @@ export default function App() {
 
       <main>
         <Hero mail={mail} />
+        <Bridge from={EDGE.silkBottom} to={EDGE.page} />
 
         <section id="at-reel" className="at-section at-tex-sec">
           <Plate tex={texture.stone} opacity={0.1} parallax={0.06} />
@@ -442,7 +477,9 @@ export default function App() {
           <HorizontalReel scrollerRef={root} />
         </section>
 
+        <Bridge from={EDGE.page} to={EDGE.monolithTop} tall />
         <Monolith mail={mail} />
+        <Bridge from={EDGE.monolithBottom} to={EDGE.page} />
 
         <section id="at-process" className="at-section at-tex-sec">
           <Plate tex={texture.concrete} opacity={0.12} parallax={0.05} />
@@ -462,7 +499,9 @@ export default function App() {
           </div>
         </section>
 
+        <Bridge from={EDGE.page} to={EDGE.oceanTop} tall />
         <Statement />
+        <Bridge from={EDGE.oceanBottom} to={EDGE.page} />
 
         <section id="at-promise" className="at-section at-tex-sec">
           <Plate tex={texture.ink} opacity={0.14} parallax={0.07} />
@@ -503,6 +542,7 @@ export default function App() {
         </section>
 
         {/* FINAL — the cloudbank carries this one */}
+        <Bridge from={EDGE.page} to={EDGE.cloudsTop} tall />
         <section className="at-close">
           <img className="at-close-img" src={img.clouds.src} alt="" aria-hidden data-parallax="0.1" />
           <Plate tex={texture.marble} opacity={0.12} blend="soft-light" />
