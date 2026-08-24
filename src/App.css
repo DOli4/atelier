@@ -1179,3 +1179,13 @@
      so nothing runs past the gutter. */
   .at-bd-h { letter-spacing: 0.2em; margin-right: -0.2em; }
 }
+
+/* The wordmark mask must clip ONLY the bottom — that is the single edge the
+   letters rise through. Using overflow:hidden clipped horizontally too, and
+   the tracked final letter plus the negative centring margin then lost ~12px.
+   A clip-path with negative insets leaves the sides and top free. */
+.at-wordmark-wrap {
+  overflow: visible;
+  padding: 0; margin: 0;
+  clip-path: inset(-0.35em -0.6em 0 -0.6em);
+}
