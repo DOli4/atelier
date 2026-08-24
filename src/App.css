@@ -1062,3 +1062,70 @@
 /* While pinned, the section fills the frame and the jellyfish hangs behind. */
 #at-process { min-height: 100vh; align-items: center; }
 #at-process .at-bd-inner { padding-block: clamp(48px, 6vw, 90px); }
+
+/* ============================================================
+   FROSTED INFO CARDS + EDGE GUTTER
+
+   The defining quality of the reference is that the background is
+   genuinely blurred THROUGH the card. An earlier revision stripped
+   backdrop-filter from the panes for cost, which is exactly why they
+   read as flat tinted rectangles instead of glass — so it comes back
+   here, at a moderate radius and on a bounded number of small cards.
+   ============================================================ */
+.atelier-page { --gutter: clamp(20px, 5vw, 72px); --pane-r: 22px; }
+
+.at-pane {
+  border-radius: var(--pane-r);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  background:
+    linear-gradient(145deg,
+      rgba(255, 255, 255, 0.10) 0%,
+      rgba(255, 255, 255, 0.035) 42%,
+      rgba(255, 255, 255, 0.012) 100%);
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.16),
+    inset -1px -1px 0 0 rgba(0, 0, 0, 0.24),
+    var(--e2);
+}
+.at-pane:hover {
+  border-color: rgba(255, 255, 255, 0.26);
+  background:
+    linear-gradient(145deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0.055) 42%,
+      rgba(255, 255, 255, 0.02) 100%);
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.24),
+    inset -1px -1px 0 0 rgba(0, 0, 0, 0.28),
+    var(--e3);
+}
+/* The spotlight ring has to follow the new radius or it corners square. */
+.at-pane::before, .at-pane::after { border-radius: inherit; }
+
+/* Panes that sit inside a shared-border grid get their own separation. */
+.at-grid { background: none; border: none; box-shadow: none; gap: clamp(16px, 1.8vw, 26px); }
+.at-cell { border-left: none; border-top: none; }
+.at-stats {
+  background: none; border: none; box-shadow: none;
+  gap: clamp(16px, 1.8vw, 26px);
+  border-block: none;
+}
+.at-stat { border-left: none; border-top: none; }
+
+/* --- Nothing touches the edge of the page --- */
+.at-bd-inner { padding-inline: var(--gutter); }
+.at-hero { padding-inline: var(--gutter); }
+.at-foot { padding-inline: var(--gutter); }
+.at-section { padding-inline: var(--gutter); }
+.at-htrack { padding-left: 2px; }          /* keeps the first card's ring visible */
+.at-close .at-final, .at-mono .at-slab { margin-inline: auto; }
+.at-hero-credit, .at-shot-credit { right: var(--gutter); }
+
+/* The backdrops are position:absolute inset:0, so they already run edge to
+   edge regardless of the inner gutter — they need no adjustment here. */
+
+@media (max-width: 620px) {
+  .atelier-page { --pane-r: 18px; }
+}
