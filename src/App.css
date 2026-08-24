@@ -1202,3 +1202,44 @@
   -webkit-mask-image: linear-gradient(90deg, #000 0, #000 90%, transparent 100%);
   mask-image: linear-gradient(90deg, #000 0, #000 90%, transparent 100%);
 }
+
+/* ============================================================
+   DOCUMENT SCROLL
+
+   The page used to be a position:fixed overflow container, which meant
+   every ScrollTrigger needed an explicit `scroller` and pinning was
+   fragile. It now scrolls normally, so ScrollTrigger works against the
+   document and Lenis can drive it.
+   ============================================================ */
+.atelier-page {
+  position: static;
+  inset: auto;
+  overflow: visible;
+  min-height: 100vh;
+  z-index: auto;
+}
+html, body { overflow-x: hidden; }
+
+/* The gold rule and any fixed furniture now anchor to the viewport
+   directly rather than to the old scroll container. */
+.at-rule { position: fixed; }
+
+/* Scroll affordance under the hero */
+.at-scroll-hint {
+  position: absolute; z-index: 3;
+  left: 50%; bottom: clamp(20px, 4vh, 42px);
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.at-scroll-hint i {
+  display: block; width: 1px; height: 40px;
+  background: linear-gradient(180deg, var(--gold), transparent);
+  transform-origin: top;
+  animation: at-hint 2.1s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+}
+@keyframes at-hint {
+  0%   { transform: scaleY(0); opacity: 0; }
+  35%  { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1) translateY(40px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .at-scroll-hint i { animation: none; } }
