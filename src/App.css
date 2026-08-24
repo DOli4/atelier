@@ -1189,3 +1189,16 @@
   padding: 0; margin: 0;
   clip-path: inset(-0.35em -0.6em 0 -0.6em);
 }
+
+/* A horizontal run always has a card mid-entry at the boundary. Hard-clipping
+   it guillotines the card on a harsh vertical line, which reads as a bug
+   rather than as motion. Fading the track's edges makes the cut deliberate —
+   cards dissolve in and out instead of being sliced. */
+.at-hmoves {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 88%, transparent 100%);
+}
+.at-hmoves.is-native {
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 90%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 90%, transparent 100%);
+}
