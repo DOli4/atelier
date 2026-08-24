@@ -107,9 +107,9 @@
 .at-hero-bg { position: absolute; inset: 0; overflow: hidden; }
 .at-hero-bg img {
   width: 100%; height: 100%; object-fit: cover;
-  /* Heavy blur + desaturation is what turns a photo into atmosphere */
-  filter: blur(26px) saturate(0.35) brightness(0.42);
-  transform: scale(1.14); /* hides the blur's soft edges */
+  /* Softness is baked into silk-bg.webp (520px, pre-blurred), so no
+     per-frame blur() runs on a full-viewport image. */
+  filter: saturate(0.35) brightness(0.42);
 }
 .at-hero-bg::after {
   content: ""; position: absolute; inset: 0;
@@ -326,41 +326,6 @@
 .at-reel.is-native::-webkit-scrollbar { height: 4px; }
 .at-reel.is-native::-webkit-scrollbar-thumb { background: var(--line-2); }
 
-/* ---- Work stage ---- */
-.at-stage {
-  position: relative; margin-top: clamp(48px, 6vw, 84px);
-  min-height: min(70vh, 620px);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: clamp(48px, 7vw, 96px) clamp(40px, 6vw, 88px) clamp(26px, 3vw, 38px);
-  border: 1px solid var(--line);
-  overflow: hidden;
-  text-align: center;
-}
-.at-stage-img {
-  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-  filter: saturate(0.3) brightness(0.34); animation: at-in 0.7s ease;
-}
-.at-stage::after {
-  content: ""; position: absolute; inset: 0;
-  background: radial-gradient(110% 85% at 50% 45%, transparent, rgba(10, 13, 18, 0.78));
-}
-.at-stage-mid { position: relative; z-index: 2; animation: at-swap 0.55s ease; }
-.at-stage-h {
-  margin-top: 22px;
-  font-family: "Montserrat", sans-serif; font-weight: 200; text-transform: uppercase;
-  font-size: clamp(1.4rem, 3.6vw, 2.6rem); line-height: 1.25;
-  letter-spacing: var(--track-hero); margin-right: calc(var(--track-hero) * -1);
-  color: var(--ink);
-}
-.at-stage-sub { margin: 20px auto 0; max-width: 42ch; font-size: 0.82rem; font-weight: 300; line-height: 1.95; color: var(--ink-2); }
-.at-stage-foot {
-  position: relative; z-index: 2; margin-top: auto; padding-top: clamp(30px, 4vw, 52px);
-  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px;
-}
-.at-dots { display: flex; gap: 10px; }
-.at-dots button { width: 22px; height: 1px; background: var(--line-2); transition: background 0.3s ease; }
-.at-dots button.is-on { background: var(--gold); }
-
 /* ---- Stats ---- */
 .at-stats {
   display: grid; grid-template-columns: repeat(4, 1fr);
@@ -519,8 +484,8 @@
   padding: clamp(30px, 4vw, 44px);
   background: rgba(14, 18, 25, 0.55);
   border: 1px solid var(--line-2);
-  backdrop-filter: blur(30px) saturate(1.15);
-  -webkit-backdrop-filter: blur(30px) saturate(1.15);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
   box-shadow: 0 70px 150px -50px rgba(0, 0, 0, 0.95);
 }
 .at-slab::before {
@@ -602,8 +567,8 @@
    hairline so the pane has thickness rather than being a flat wash. */
 .at-glass {
   position: relative;
-  backdrop-filter: blur(30px) saturate(1.2);
-  -webkit-backdrop-filter: blur(30px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
   box-shadow:
     0 60px 140px -50px rgba(0, 0, 0, 0.9),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.07),
@@ -630,54 +595,6 @@
 .at-shot-credit:hover { opacity: 1; color: var(--gold-2); }
 .at-shot-credit::before { content: "© "; opacity: 0.7; }
 .at-reel-card .at-shot-credit { bottom: 10px; right: 12px; }
-
-/* ---- Full-bleed statement band ---- */
-.at-band {
-  position: relative; overflow: hidden;
-  min-height: 92vh; display: flex; align-items: center;
-  margin-top: clamp(90px, 12vw, 190px);
-  border-block: 1px solid var(--line);
-}
-.at-band-img {
-  position: absolute; inset: -12% 0; width: 100%; height: 124%;
-  object-fit: cover; filter: saturate(0.3) brightness(0.38); will-change: transform;
-}
-.at-band::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(100deg, rgba(10, 13, 18, 0.9) 8%, rgba(10, 13, 18, 0.45) 60%, rgba(10, 13, 18, 0.8));
-}
-.at-band-inner {
-  position: relative; z-index: 2;
-  display: flex; flex-direction: column; gap: 22px;
-  padding: clamp(48px, 8vw, 120px) clamp(28px, 8vw, 140px);
-  max-width: 760px;
-}
-.at-band-h {
-  font-family: "Montserrat", sans-serif; font-weight: 200; text-transform: uppercase;
-  font-size: clamp(2rem, 6vw, 4.2rem); line-height: 1.08;
-  letter-spacing: var(--track-hero); margin-right: calc(var(--track-hero) * -1);
-  color: var(--ink);
-}
-.at-band-lede { max-width: 44ch; }
-
-/* ---- Closing section, carried by the cloudbank ---- */
-.at-close {
-  position: relative; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  padding: clamp(90px, 12vw, 180px) clamp(24px, 6vw, 80px);
-  margin-top: clamp(90px, 12vw, 190px);
-  border-top: 1px solid var(--line);
-}
-.at-close-img {
-  position: absolute; inset: -10% 0; width: 100%; height: 120%;
-  object-fit: cover; filter: saturate(0.2) brightness(0.3) contrast(1.1);
-  will-change: transform;
-}
-.at-close::after {
-  content: ""; position: absolute; inset: 0;
-  background: radial-gradient(70% 60% at 50% 50%, rgba(10, 13, 18, 0.55), rgba(10, 13, 18, 0.93));
-}
-.at-close .at-final { position: relative; z-index: 2; width: min(760px, 100%); }
 
 /* ---- Footer credits ---- */
 .at-foot { flex-direction: column; gap: 30px; text-align: center; }
@@ -749,4 +666,76 @@
   background:
     radial-gradient(70% 60% at 50% 50%, rgba(10, 13, 18, 0.55), rgba(10, 13, 18, 0.93)),
     linear-gradient(180deg, rgba(29, 31, 34, 0.85), transparent 26%);
+}
+
+/* ============================================================
+   IMAGE-BACKED SECTIONS
+
+   Every section is carried by one photograph. Kept deliberately cheap:
+   the image is a plain <img> with paint-time filters only, the texture
+   is a single opacity layer with NO blend mode, and the only animated
+   property is transform. An earlier revision used backdrop-filter on
+   six panels plus eleven mix-blend-mode layers plus a full-viewport
+   blur() and froze the compositor outright — do not reintroduce that.
+   ============================================================ */
+.at-bd-sec {
+  position: relative;
+  min-height: 96vh;
+  display: flex; align-items: center;
+  overflow: hidden;
+}
+.at-bd-sec.at-short { min-height: 64vh; }
+
+.at-bd { position: absolute; inset: 0; overflow: hidden; }
+.at-bd img {
+  position: absolute; inset: -12% 0; width: 100%; height: 124%;
+  object-fit: cover;
+  filter: saturate(0.3) brightness(0.36);
+  will-change: transform;
+}
+.at-bd.is-lift img { filter: saturate(0.5) brightness(0.5); }
+/* Texture sits over the frame at low opacity — no blend mode, which keeps
+   the layer on the cheap compositing path. */
+.at-bd-tex {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  pointer-events: none;
+}
+.at-bd::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(100deg, rgba(10, 13, 18, 0.88) 6%, rgba(10, 13, 18, 0.42) 62%, rgba(10, 13, 18, 0.78)),
+    linear-gradient(180deg, rgba(10, 13, 18, 0.72), transparent 24%, transparent 76%, rgba(10, 13, 18, 0.86));
+}
+
+.at-bd-inner {
+  position: relative; z-index: 2; width: 100%;
+  display: flex; flex-direction: column; gap: 22px;
+  max-width: 1180px; margin: 0 auto;
+  padding: clamp(56px, 8vw, 120px) clamp(28px, 6vw, 88px);
+}
+.at-bd-inner.at-center { align-items: center; text-align: center; }
+.at-center-lede { margin-inline: auto; }
+.at-bd-h {
+  font-family: "Montserrat", sans-serif; font-weight: 200; text-transform: uppercase;
+  font-size: clamp(1.9rem, 5.4vw, 3.9rem); line-height: 1.1;
+  letter-spacing: var(--track-hero); margin-right: calc(var(--track-hero) * -1);
+  color: var(--ink);
+}
+.at-bd-inner .at-grid, .at-bd-inner .at-stats { margin-top: clamp(28px, 4vw, 44px); }
+
+/* The monolith section centres its slab over the orbiting ring. */
+.at-mono { justify-content: center; }
+.at-mono .at-slab { margin: clamp(56px, 8vw, 110px) 0; }
+.at-close { justify-content: center; }
+.at-close .at-final { position: relative; z-index: 2; width: min(760px, 100%); margin: clamp(48px, 7vw, 96px) 0; }
+
+/* Sections no longer carry their own rules — the bridges do the joining. */
+.at-bd-sec, .at-mono, .at-close { border-block: none; margin-top: 0; }
+
+@media (max-width: 900px) {
+  .at-bd-sec { min-height: 84vh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .at-bd img { transform: none !important; }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -8,6 +8,7 @@ import "./App.css";
 gsap.registerPlugin(ScrollTrigger);
 
 const EMAIL = "Oli4Dieter@gmail.com";
+const BASE = "/atelier";
 const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const tiers = [
@@ -37,14 +38,6 @@ const tiers = [
   },
 ];
 
-/* Each of the eight photographs is used exactly once across the page. */
-const reel = [
-  { ...img.chrome, tag: "FORM", name: "Shaped by hand" },
-  { ...img.form, tag: "RESTRAINT", name: "One clean gesture" },
-  { ...img.glass, tag: "CRAFT", name: "Light, bent" },
-  { ...img.car, tag: "PERFORMANCE", name: "Built to last" },
-];
-
 const process = [
   { k: "01", t: "THE BRIEF", d: "We talk. I learn your goal, your audience, and exactly what winning looks like." },
   { k: "02", t: "THE SKETCH", d: "A distinctive direction, then high-fidelity screens you can feel, not merely approve." },
@@ -61,45 +54,37 @@ const promises = [
 
 const ORBIT_WORDS = ["DESIGN", "BUILD", "SHIP", "SCALE", "ENDURE"];
 
+/**
+ * Perceived edge colours at each section boundary.
+ *
+ * Sampled from each file's top/bottom strip, then pushed through the same
+ * maths the CSS applies (saturate → brightness → composite the overlay), so
+ * they match what the eye sees. Re-derive if a section's overlay changes.
+ */
+const EDGE = {
+  page: "#0a0d12",
+  chromeTop: "#1a1c1f", chromeBottom: "#0d1013",
+  monolithTop: "#151b21", monolithBottom: "#0a0d12",
+  glassTop: "#1b1d20", glassBottom: "#0d0f13",
+  oceanTop: "#1c1e21", oceanBottom: "#0c0f13",
+  formTop: "#0d0e10", formBottom: "#0b0d10",
+  carTop: "#151618", carBottom: "#0c0e11",
+  cloudsTop: "#1d1f22",
+} as const;
+
 function Ornament() {
   return <span className="at-orn" aria-hidden><i /><b /><i /></span>;
 }
 
-/**
- * Perceived edge colours of each image section.
- *
- * These are NOT the raw pixel values — they were sampled from the top/bottom
- * strip of each file and then pushed through the same pipeline the CSS applies
- * (saturate → brightness → contrast → composite the section's overlay), so they
- * match what the eye actually sees at that boundary. Re-derive them if a
- * section's filter or overlay alpha changes, or the seam will show.
- */
-const EDGE = {
-  page: "#0a0d12",
-  silkBottom: "#090b10",
-  monolithTop: "#151b21",
-  monolithBottom: "#0a0d12",
-  oceanTop: "#1c1e21",
-  oceanBottom: "#0c0f13",
-  cloudsTop: "#1d1f22",
-} as const;
-
-/**
- * The gap between two image sections, filled with a gradient that runs from the
- * lower edge of the frame above to the upper edge of the frame below — so the
- * images hand off to each other instead of butting into a hard seam.
- */
+/** Gradient gap that hands one frame's edge colour to the next. */
 function Bridge({ from, to, tall }: { from: string; to: string; tall?: boolean }) {
   return (
-    <span
-      className={`at-bridge${tall ? " is-tall" : ""}`}
-      aria-hidden
-      style={{ ["--from" as string]: from, ["--to" as string]: to }}
-    />
+    <span className={`at-bridge${tall ? " is-tall" : ""}`} aria-hidden
+      style={{ ["--from" as string]: from, ["--to" as string]: to }} />
   );
 }
 
-/** The small gold photographer mark that sits on an image and links out. */
+/** Small gold photographer mark sitting on an image, linking to their profile. */
 function ShotCredit({ c }: { c: Credit }) {
   return (
     <a className="at-shot-credit" href={profileUrl(c)} target="_blank" rel="noreferrer noopener">
@@ -109,32 +94,31 @@ function ShotCredit({ c }: { c: Credit }) {
 }
 
 /**
- * A texture plate. Real photographic surfaces sit under the glass at low
- * opacity with a blend mode, so panels read as a material instead of a flat
- * translucent fill. Purely decorative, hence aria-hidden.
+ * A full-bleed image background for a section.
+ *
+ * The image is a plain <img> with only cheap paint-time filters — no runtime
+ * blur, no blend mode. `tex` lays one texture over it at low opacity so the
+ * surface reads as a material. Kept deliberately lean: this markup repeats
+ * once per section, so anything expensive here multiplies across the page.
  */
-function Plate({ tex, opacity = 0.07, blend = "overlay", parallax }:
-  { tex: Credit; opacity?: number; blend?: string; parallax?: number }) {
+function Backdrop({ shot, tex, texOpacity = 0.1, tone = "" }:
+  { shot: Credit; tex?: Credit; texOpacity?: number; tone?: string }) {
   return (
-    <span
-      className="at-plate"
-      aria-hidden
-      data-parallax={parallax}
-      style={{
-        backgroundImage: `url(${tex.src})`,
-        opacity,
-        mixBlendMode: blend as never,
-      }}
-    />
+    <>
+      <div className={`at-bd ${tone}`} aria-hidden>
+        <img src={shot.src} alt="" data-parallax="0.1" />
+        {tex && <span className="at-bd-tex" style={{
+          backgroundImage: `url(${tex.src})`, opacity: texOpacity }} />}
+      </div>
+      <ShotCredit c={shot} />
+    </>
   );
 }
 
 function SplitWord({ text, className }: { text: string; className: string }) {
   return (
     <span className={className} aria-label={text}>
-      {text.split("").map((ch, i) => (
-        <span className="at-ltr" key={i} aria-hidden>{ch}</span>
-      ))}
+      {text.split("").map((ch, i) => <span className="at-ltr" key={i} aria-hidden>{ch}</span>)}
     </span>
   );
 }
@@ -146,13 +130,13 @@ function Hero({ mail }: { mail: (s: string) => string }) {
 
   return (
     <section className="at-hero">
+      {/* Pre-blurred 520px asset stretched by CSS — the softness is baked into
+          the file, so there is no per-frame blur() on a full-viewport image. */}
       <div className="at-hero-bg" aria-hidden>
-        <img src={img.silk.src} alt="" data-hero-bg />
+        <img src={`${BASE}/work/silk-bg.webp`} alt="" data-hero-bg />
       </div>
-      <Plate tex={texture.mica} opacity={0.14} blend="soft-light" />
 
       <div className="at-panel at-glass" data-panel>
-        <Plate tex={texture.ink} opacity={0.06} />
         <header className="at-panel-top">
           <div className="at-panel-lead">
             <span className="at-menu" aria-hidden><i /><i /><i /></span>
@@ -173,17 +157,12 @@ function Hero({ mail }: { mail: (s: string) => string }) {
         </button>
 
         <div className="at-panel-body">
-          <h1 className="at-wordmark-wrap">
-            <SplitWord text="ATELIER" className="at-wordmark" />
-          </h1>
+          <h1 className="at-wordmark-wrap"><SplitWord text="ATELIER" className="at-wordmark" /></h1>
           <p className="at-model" key={tier.id}>{tier.model}</p>
           <Ornament />
           <div className="at-triad" key={`${tier.id}-cols`}>
             {tier.cols.map((c) => (
-              <article key={c.h}>
-                <h2>{c.h}</h2>
-                <p>{c.d}</p>
-              </article>
+              <article key={c.h}><h2>{c.h}</h2><p>{c.d}</p></article>
             ))}
           </div>
         </div>
@@ -196,8 +175,7 @@ function Hero({ mail }: { mail: (s: string) => string }) {
             {tiers.map((t, k) => (
               <button key={t.id} className={`at-switch-item${k === i ? " is-on" : ""}`}
                 onClick={() => setI(k)} aria-current={k === i}>
-                <span>ATELIER</span>
-                <strong>{t.label}</strong>
+                <span>ATELIER</span><strong>{t.label}</strong>
               </button>
             ))}
           </div>
@@ -209,134 +187,6 @@ function Hero({ mail }: { mail: (s: string) => string }) {
 
       <ShotCredit c={img.silk} />
     </section>
-  );
-}
-
-/** Tall glass slab standing in an atmospheric scene, words orbiting on a 3D ring. */
-function Monolith({ mail }: { mail: (s: string) => string }) {
-  return (
-    <section className="at-mono" id="at-mono">
-      <div className="at-mono-bg" aria-hidden>
-        <img src={img.monolith.src} alt="" data-parallax="0.14" />
-      </div>
-      <Plate tex={texture.willow} opacity={0.3} blend="screen" />
-
-      <div className="at-orbit" aria-hidden>
-        <div className="at-orbit-stage">
-          {ORBIT_WORDS.map((w, i) => (
-            <span className="at-orbit-word" key={w}
-              style={{
-                ["--seat" as string]: `${(i * 360) / ORBIT_WORDS.length}deg`,
-                ["--delay" as string]:
-                  `${(-18 * ((ORBIT_WORDS.length - i) % ORBIT_WORDS.length)) / ORBIT_WORDS.length - 9}s`,
-              }}>
-              {w}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="at-slab at-glass" data-reveal>
-        <Plate tex={texture.mica} opacity={0.09} />
-        <div className="at-slab-top">
-          <span className="at-meta">ATELIER</span>
-          <span className="at-meta">/ 02</span>
-        </div>
-        <h2 className="at-slab-h">STILL<br />BUILDING</h2>
-        <p className="at-slab-sub">
-          Every surface here was drawn, coded and tuned by one person. The work is
-          quiet on purpose — it should hold up on the tenth visit, not only the first.
-        </p>
-        <div className="at-slab-rows">
-          {[["DISCIPLINE", "DESIGN + CODE"], ["STACK", "REACT / TYPESCRIPT"],
-            ["TEMPLATES", "NONE"], ["AVAILABILITY", "OPEN"]].map(([k, v]) => (
-            <div className="at-slab-row" key={k}>
-              <span className="at-meta">{k}</span>
-              <strong>{v}</strong>
-            </div>
-          ))}
-        </div>
-        <a className="at-cta at-cta-sm" href={mail("Website commission")}>START A COMMISSION</a>
-      </div>
-
-      <ShotCredit c={img.monolith} />
-    </section>
-  );
-}
-
-/** One full-bleed statement band — a single cinematic image, words over it. */
-function Statement() {
-  return (
-    <section className="at-band" id="at-work">
-      <img className="at-band-img" src={img.ocean.src} alt={img.ocean.alt} data-parallax="0.12" />
-      <Plate tex={texture.stone} opacity={0.16} blend="overlay" />
-      <div className="at-band-inner">
-        <p className="at-label" data-reveal>04 — SELECTED WORK</p>
-        <h2 className="at-band-h" data-reveal>CALM<br />UNDER LOAD</h2>
-        <p className="at-lede at-band-lede" data-reveal>
-          Smooth when the traffic surges. Optimised, accessible, and engineered to
-          hold its nerve under pressure.
-        </p>
-      </div>
-      <ShotCredit c={img.ocean} />
-    </section>
-  );
-}
-
-function HorizontalReel({ scrollerRef }: { scrollerRef: RefObject<HTMLDivElement | null> }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [native, setNative] = useState(false);
-
-  useEffect(() => {
-    const narrow = window.innerWidth < 860;
-    const scroller = scrollerRef.current;
-    if (reduced() || narrow || !scroller || !wrapRef.current || !trackRef.current) {
-      setNative(true);
-      return;
-    }
-    const wrap = wrapRef.current;
-    const track = trackRef.current;
-    const ctx = gsap.context(() => {
-      const distance = () => track.scrollWidth - wrap.clientWidth;
-      gsap.to(track, {
-        x: () => -distance(), ease: "none",
-        scrollTrigger: {
-          trigger: wrap, start: "top top", end: () => `+=${distance()}`,
-          scrub: 0.6, pin: true, scroller, invalidateOnRefresh: true,
-        },
-      });
-      // Cards lean into the travel direction — momentum, not a canned loop.
-      gsap.fromTo(".at-reel-card",
-        { rotateY: 8, scale: 0.95 },
-        {
-          rotateY: -8, scale: 1, ease: "none", stagger: 0.04,
-          scrollTrigger: {
-            trigger: wrap, start: "top top", end: () => `+=${distance()}`,
-            scrub: 0.8, scroller,
-          },
-        });
-    });
-    return () => ctx.revert();
-  }, [scrollerRef]);
-
-  return (
-    <div className="at-reel-wrap" ref={wrapRef}>
-      <div className={`at-reel${native ? " is-native" : ""}`}>
-        <div className="at-reel-track" ref={trackRef}>
-          {reel.map((r) => (
-            <figure className="at-reel-card" key={r.name}>
-              <img src={r.src} alt={r.alt} loading="lazy" />
-              <figcaption>
-                <span className="at-label">{r.tag}</span>
-                <strong>{r.name}</strong>
-              </figcaption>
-              <ShotCredit c={r} />
-            </figure>
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -352,59 +202,42 @@ export default function App() {
     const ctx = gsap.context(() => {
       if (isReduced) return;
 
-      // Opening: the panel settles, then the wordmark builds letter by letter.
       gsap.timeline({ defaults: { ease: "power3.out" } })
-        .from("[data-panel]", { y: 44, scale: 0.985, opacity: 0, duration: 1.15 })
-        .from(".at-ltr", { yPercent: 118, opacity: 0, duration: 0.9, stagger: 0.045 }, "-=0.7")
-        .from(".at-model, .at-panel-body .at-orn", { opacity: 0, y: 12, duration: 0.7 }, "-=0.5")
-        .from(".at-triad article", { opacity: 0, y: 20, duration: 0.75, stagger: 0.09 }, "-=0.45")
-        .from(".at-switch-item", { opacity: 0, y: 14, duration: 0.6, stagger: 0.07 }, "-=0.5");
+        .from("[data-panel]", { y: 40, opacity: 0, duration: 1 })
+        .from(".at-ltr", { yPercent: 115, opacity: 0, duration: 0.85, stagger: 0.04 }, "-=0.6")
+        .from(".at-model, .at-panel-body .at-orn", { opacity: 0, y: 12, duration: 0.65 }, "-=0.45")
+        .from(".at-triad article", { opacity: 0, y: 18, duration: 0.7, stagger: 0.08 }, "-=0.4")
+        .from(".at-switch-item", { opacity: 0, y: 12, duration: 0.55, stagger: 0.06 }, "-=0.45");
 
-      gsap.to("[data-hero-bg]", {
-        yPercent: 12, ease: "none",
-        scrollTrigger: { trigger: ".at-hero", start: "top top", end: "bottom top", scrub: true, scroller },
-      });
-
-      // Section entrances: content lifts while unblurring — the "rich" feel comes
-      // from blur+scale resolving together rather than a bare fade.
       gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
         gsap.from(el, {
-          y: 46, opacity: 0, filter: "blur(12px)", duration: 1.2, ease: "power3.out",
+          y: 40, opacity: 0, duration: 1, ease: "power3.out",
           scrollTrigger: { trigger: el, start: "top 88%", scroller },
         });
       });
       gsap.utils.toArray<HTMLElement>("[data-stagger]").forEach((el) => {
         gsap.from(el.children, {
-          y: 34, opacity: 0, filter: "blur(8px)", duration: 0.9, ease: "power3.out", stagger: 0.1,
+          y: 28, opacity: 0, duration: 0.8, ease: "power3.out", stagger: 0.09,
           scrollTrigger: { trigger: el, start: "top 85%", scroller },
         });
       });
-
-      // Headings wipe up behind a mask instead of fading.
-      gsap.utils.toArray<HTMLElement>(".at-h2, .at-slab-h, .at-band-h, .at-final-h").forEach((el) => {
+      gsap.utils.toArray<HTMLElement>(".at-h2, .at-bd-h, .at-final-h").forEach((el) => {
         gsap.from(el, {
-          clipPath: "inset(0 0 100% 0)", y: 26, duration: 1.15, ease: "power3.out",
+          clipPath: "inset(0 0 100% 0)", y: 22, duration: 1.05, ease: "power3.out",
           scrollTrigger: { trigger: el, start: "top 88%", scroller },
         });
       });
 
-      // Texture plates and background images drift at their own rates.
+      // Parallax only the section background images. Transform-only, so it
+      // stays on the compositor and never triggers layout or paint.
       gsap.utils.toArray<HTMLElement>("[data-parallax]").forEach((el) => {
-        const f = Number(el.dataset.parallax) || 0.12;
+        const f = Number(el.dataset.parallax) || 0.1;
         gsap.fromTo(el, { yPercent: -f * 100 }, {
           yPercent: f * 100, ease: "none",
           scrollTrigger: {
-            trigger: el.parentElement!, start: "top bottom", end: "bottom top",
+            trigger: el.closest("section")!, start: "top bottom", end: "bottom top",
             scrub: true, scroller,
           },
-        });
-      });
-
-      // Bordered grids draw themselves open.
-      gsap.utils.toArray<HTMLElement>(".at-grid, .at-stats").forEach((el) => {
-        gsap.from(el, {
-          scaleX: 0.92, opacity: 0, duration: 1.1, ease: "power3.out", transformOrigin: "center",
-          scrollTrigger: { trigger: el, start: "top 88%", scroller },
         });
       });
     }, root);
@@ -436,7 +269,6 @@ export default function App() {
     return () => { cancelled = true; ctx.revert(); io?.disconnect(); };
   }, []);
 
-  // Magnetic CTAs — lean toward the cursor, spring back on leave.
   useEffect(() => {
     if (reduced()) return;
     const btns = Array.from(document.querySelectorAll<HTMLElement>(".at-cta"));
@@ -456,8 +288,7 @@ export default function App() {
     return () => cleanups.forEach((fn) => fn());
   }, []);
 
-  const mail = (subject: string) =>
-    `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}`;
+  const mail = (s: string) => `mailto:${EMAIL}?subject=${encodeURIComponent(s)}`;
 
   return (
     <div className="atelier-page" ref={root}>
@@ -465,90 +296,147 @@ export default function App() {
 
       <main>
         <Hero mail={mail} />
-        <Bridge from={EDGE.silkBottom} to={EDGE.page} />
+        <Bridge from={EDGE.page} to={EDGE.chromeTop} tall />
 
-        <section id="at-reel" className="at-section at-tex-sec">
-          <Plate tex={texture.stone} opacity={0.1} parallax={0.06} />
-          <header className="at-sec-head" data-reveal>
-            <p className="at-label">01 — THE REEL</p>
-            <h2 className="at-h2">SELECTED SURFACES</h2>
-            <p className="at-lede">Scroll down, then sideways.</p>
-          </header>
-          <HorizontalReel scrollerRef={root} />
-        </section>
-
-        <Bridge from={EDGE.page} to={EDGE.monolithTop} tall />
-        <Monolith mail={mail} />
-        <Bridge from={EDGE.monolithBottom} to={EDGE.page} />
-
-        <section id="at-process" className="at-section at-tex-sec">
-          <Plate tex={texture.concrete} opacity={0.12} parallax={0.05} />
-          <header className="at-sec-head" data-reveal>
-            <p className="at-label">03 — HOW IT WORKS</p>
-            <h2 className="at-h2">FOUR MOVES</h2>
-            <p className="at-lede">No smoke. You always know what happens next.</p>
-          </header>
-          <div className="at-grid at-grid-4 at-glass" data-stagger>
-            {process.map((s) => (
-              <article className="at-cell" key={s.k}>
-                <span className="at-cell-k">{s.k}</span>
-                <h3 className="at-cell-t">{s.t}</h3>
-                <p className="at-cell-d">{s.d}</p>
-              </article>
-            ))}
+        {/* 01 — SURFACES, carried by the chrome frame */}
+        <section className="at-bd-sec" id="at-surfaces">
+          <Backdrop shot={img.chrome} tex={texture.stone} texOpacity={0.12} />
+          <div className="at-bd-inner at-center">
+            <p className="at-label" data-reveal>01 — SELECTED SURFACES</p>
+            <h2 className="at-bd-h" data-reveal>SHAPED<br />BY HAND</h2>
+            <p className="at-lede at-center-lede" data-reveal>
+              No templates and no page-builders. Every surface is drawn, coded and
+              tuned from an empty file.
+            </p>
           </div>
         </section>
 
-        <Bridge from={EDGE.page} to={EDGE.oceanTop} tall />
-        <Statement />
-        <Bridge from={EDGE.oceanBottom} to={EDGE.page} />
+        <Bridge from={EDGE.chromeBottom} to={EDGE.monolithTop} tall />
 
-        <section id="at-promise" className="at-section at-tex-sec">
-          <Plate tex={texture.ink} opacity={0.14} parallax={0.07} />
-          <header className="at-sec-head" data-reveal>
-            <p className="at-label">05 — THE PROMISE</p>
-            <h2 className="at-h2">WHY WORK WITH ME</h2>
-          </header>
-          <div className="at-grid at-grid-4 at-glass" data-stagger>
-            {promises.map((p) => (
-              <article className="at-cell" key={p.t}>
-                <h3 className="at-cell-t">{p.t}</h3>
-                <p className="at-cell-d">{p.d}</p>
-              </article>
-            ))}
+        {/* 02 — MONOLITH, with the orbiting word ring */}
+        <section className="at-bd-sec at-mono" id="at-mono">
+          <Backdrop shot={img.monolith} tex={texture.willow} texOpacity={0.26} tone="is-lift" />
+          <div className="at-orbit" aria-hidden>
+            <div className="at-orbit-stage">
+              {ORBIT_WORDS.map((w, i) => (
+                <span className="at-orbit-word" key={w} style={{
+                  ["--seat" as string]: `${(i * 360) / ORBIT_WORDS.length}deg`,
+                  ["--delay" as string]:
+                    `${(-18 * ((ORBIT_WORDS.length - i) % ORBIT_WORDS.length)) / ORBIT_WORDS.length - 9}s`,
+                }}>{w}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="at-slab at-glass" data-reveal>
+            <div className="at-slab-top">
+              <span className="at-meta">ATELIER</span><span className="at-meta">/ 02</span>
+            </div>
+            <h2 className="at-slab-h">STILL<br />BUILDING</h2>
+            <p className="at-slab-sub">
+              Every surface here was drawn, coded and tuned by one person. The work is
+              quiet on purpose — it should hold up on the tenth visit, not only the first.
+            </p>
+            <div className="at-slab-rows">
+              {[["DISCIPLINE", "DESIGN + CODE"], ["STACK", "REACT / TYPESCRIPT"],
+                ["TEMPLATES", "NONE"], ["AVAILABILITY", "OPEN"]].map(([k, v]) => (
+                <div className="at-slab-row" key={k}>
+                  <span className="at-meta">{k}</span><strong>{v}</strong>
+                </div>
+              ))}
+            </div>
+            <a className="at-cta at-cta-sm" href={mail("Website commission")}>START A COMMISSION</a>
           </div>
         </section>
 
-        <section className="at-section at-tex-sec">
-          <Plate tex={texture.streaks} opacity={0.16} blend="screen" parallax={0.08} />
-          <div className="at-stats at-glass" data-reveal>
-            <div className="at-stat">
-              <strong><span data-count="22">0</span></strong>
-              <span className="at-meta">DISTINCTIONS EARNED</span>
-            </div>
-            <div className="at-stat">
-              <strong><span data-count="100">0</span>%</strong>
-              <span className="at-meta">CUSTOM-CODED</span>
-            </div>
-            <div className="at-stat">
-              <strong><span data-count="0">0</span></strong>
-              <span className="at-meta">TEMPLATES USED</span>
-            </div>
-            <div className="at-stat">
-              <strong>&infin;</strong>
-              <span className="at-meta">REVISIONS UNTIL RIGHT</span>
+        <Bridge from={EDGE.monolithBottom} to={EDGE.glassTop} tall />
+
+        {/* 03 — PROCESS, carried by the refracted-glass frame */}
+        <section className="at-bd-sec" id="at-process">
+          <Backdrop shot={img.glass} tex={texture.concrete} texOpacity={0.12} />
+          <div className="at-bd-inner">
+            <p className="at-label" data-reveal>03 — HOW IT WORKS</p>
+            <h2 className="at-bd-h" data-reveal>FOUR MOVES</h2>
+            <div className="at-grid at-grid-4 at-glass" data-stagger>
+              {process.map((s) => (
+                <article className="at-cell" key={s.k}>
+                  <span className="at-cell-k">{s.k}</span>
+                  <h3 className="at-cell-t">{s.t}</h3>
+                  <p className="at-cell-d">{s.d}</p>
+                </article>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* FINAL — the cloudbank carries this one */}
-        <Bridge from={EDGE.page} to={EDGE.cloudsTop} tall />
-        <section className="at-close">
-          <img className="at-close-img" src={img.clouds.src} alt="" aria-hidden data-parallax="0.1" />
-          <Plate tex={texture.marble} opacity={0.12} blend="soft-light" />
+        <Bridge from={EDGE.glassBottom} to={EDGE.oceanTop} tall />
+
+        {/* 04 — STATEMENT, carried by the ocean */}
+        <section className="at-bd-sec" id="at-work">
+          <Backdrop shot={img.ocean} tex={texture.stone} texOpacity={0.14} />
+          <div className="at-bd-inner">
+            <p className="at-label" data-reveal>04 — SELECTED WORK</p>
+            <h2 className="at-bd-h" data-reveal>CALM<br />UNDER LOAD</h2>
+            <p className="at-lede" data-reveal>
+              Smooth when the traffic surges. Optimised, accessible, and engineered to
+              hold its nerve under pressure.
+            </p>
+          </div>
+        </section>
+
+        <Bridge from={EDGE.oceanBottom} to={EDGE.formTop} tall />
+
+        {/* 05 — PROMISE, carried by the sculptural form */}
+        <section className="at-bd-sec" id="at-promise">
+          <Backdrop shot={img.form} tex={texture.ink} texOpacity={0.16} />
+          <div className="at-bd-inner">
+            <p className="at-label" data-reveal>05 — THE PROMISE</p>
+            <h2 className="at-bd-h" data-reveal>WHY WORK<br />WITH ME</h2>
+            <div className="at-grid at-grid-4 at-glass" data-stagger>
+              {promises.map((p) => (
+                <article className="at-cell" key={p.t}>
+                  <h3 className="at-cell-t">{p.t}</h3>
+                  <p className="at-cell-d">{p.d}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <Bridge from={EDGE.formBottom} to={EDGE.carTop} tall />
+
+        {/* 06 — STATS, carried by the car frame */}
+        <section className="at-bd-sec at-short" id="at-stats">
+          <Backdrop shot={img.car} tex={texture.streaks} texOpacity={0.14} />
+          <div className="at-bd-inner">
+            <div className="at-stats at-glass" data-reveal>
+              <div className="at-stat">
+                <strong><span data-count="22">0</span></strong>
+                <span className="at-meta">DISTINCTIONS EARNED</span>
+              </div>
+              <div className="at-stat">
+                <strong><span data-count="100">0</span>%</strong>
+                <span className="at-meta">CUSTOM-CODED</span>
+              </div>
+              <div className="at-stat">
+                <strong><span data-count="0">0</span></strong>
+                <span className="at-meta">TEMPLATES USED</span>
+              </div>
+              <div className="at-stat">
+                <strong>&infin;</strong>
+                <span className="at-meta">REVISIONS UNTIL RIGHT</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <Bridge from={EDGE.carBottom} to={EDGE.cloudsTop} tall />
+
+        {/* 07 — CLOSE, carried by the cloudbank */}
+        <section className="at-bd-sec at-close" id="at-close">
+          <Backdrop shot={img.clouds} tex={texture.marble} texOpacity={0.1} />
           <div className="at-final at-glass" data-reveal>
-            <Plate tex={texture.mica} opacity={0.08} />
-            <p className="at-label">06 — COMMISSION</p>
+            <p className="at-label">07 — COMMISSION</p>
             <h2 className="at-final-h">READY TO BUILD</h2>
             <Ornament />
             <p className="at-lede">
@@ -557,7 +445,6 @@ export default function App() {
             </p>
             <a className="at-cta" href={mail("Let's build my website")}>START A COMMISSION</a>
           </div>
-          <ShotCredit c={img.clouds} />
         </section>
 
         <footer className="at-foot">
