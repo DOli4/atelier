@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { img, texture, allArtists, profileUrl, type Credit } from "./images";
 import "./App.css";
+
+// Code-split: three + r3f are the heaviest thing on the page, so they are
+// not in the initial bundle and only load when the section is approached.
+const Jellyfish = lazy(() => import("./Jellyfish"));
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -54,34 +58,45 @@ const promises = [
 
 const ORBIT_WORDS = ["DESIGN", "BUILD", "SHIP", "SCALE", "ENDURE"];
 
+
 /**
- * Perceived edge colours at each section boundary.
+ * Mounts its child only while the element is near the viewport.
  *
- * Sampled from each file's top/bottom strip, then pushed through the same
- * maths the CSS applies (saturate → brightness → composite the overlay), so
- * they match what the eye sees. Re-derive if a section's overlay changes.
+ * The jellyfish holds a live WebGL context and runs shaders every frame, so it
+ * must not exist while it is scrolled away. `rootMargin` starts the chunk
+ * download slightly before it is needed so it is ready on arrival.
  */
-const EDGE = {
-  page: "#0a0d12",
-  chromeTop: "#1a1c1f", chromeBottom: "#0d1013",
-  monolithTop: "#151b21", monolithBottom: "#0a0d12",
-  glassTop: "#1b1d20", glassBottom: "#0d0f13",
-  oceanTop: "#1c1e21", oceanBottom: "#0c0f13",
-  formTop: "#0d0e10", formBottom: "#0b0d10",
-  carTop: "#151618", carBottom: "#0c0e11",
-  cloudsTop: "#1d1f22",
-} as const;
+function WhenNear({ children, className }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => setNear(e.isIntersecting),
+      { rootMargin: "400px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return <div className={className} ref={ref}>{near && children}</div>;
+}
 
 function Ornament() {
   return <span className="at-orn" aria-hidden><i /><b /><i /></span>;
 }
 
-/** Gradient gap that hands one frame's edge colour to the next. */
-function Bridge({ from, to, tall }: { from: string; to: string; tall?: boolean }) {
-  return (
-    <span className={`at-bridge${tall ? " is-tall" : ""}`} aria-hidden
-      style={{ ["--from" as string]: from, ["--to" as string]: to }} />
-  );
+/**
+ * The gap between two image sections.
+ *
+ * There is deliberately no colour matching here. Each section's backdrop is
+ * masked to fade out at its own top and bottom edges, so both sides of this
+ * gap are literally the page ground — a seam cannot appear. An earlier
+ * revision hand-maintained a table of sampled edge colours and grew a visible
+ * hard line the moment a filter or overlay alpha changed.
+ */
+function Bridge({ tall }: { tall?: boolean }) {
+  return <span className={`at-bridge${tall ? " is-tall" : ""}`} aria-hidden />;
 }
 
 /** Small gold photographer mark sitting on an image, linking to their profile. */
@@ -303,7 +318,7 @@ export default function App() {
 
       <main>
         <Hero mail={mail} />
-        <Bridge from={EDGE.page} to={EDGE.chromeTop} tall />
+        <Bridge tall />
 
         {/* 01 — SURFACES, carried by the chrome frame */}
         <section className="at-bd-sec" id="at-surfaces">
@@ -318,11 +333,17 @@ export default function App() {
           </div>
         </section>
 
-        <Bridge from={EDGE.chromeBottom} to={EDGE.monolithTop} tall />
+        <Bridge tall />
 
         {/* 02 — MONOLITH, with the orbiting word ring */}
         <section className="at-bd-sec at-mono" id="at-mono">
           <Backdrop shot={img.monolith} tex={texture.willow} texOpacity={0.26} tone="is-lift" />
+          <WhenNear className="at-jelly">
+            <Suspense fallback={null}>
+              <Jellyfish loop={20} />
+            </Suspense>
+          </WhenNear>
+
           <div className="at-orbit" aria-hidden>
             <div className="at-orbit-stage">
               {ORBIT_WORDS.map((w, i) => (
@@ -356,7 +377,7 @@ export default function App() {
           </div>
         </section>
 
-        <Bridge from={EDGE.monolithBottom} to={EDGE.glassTop} tall />
+        <Bridge tall />
 
         {/* 03 — PROCESS, carried by the refracted-glass frame */}
         <section className="at-bd-sec" id="at-process">
@@ -376,7 +397,7 @@ export default function App() {
           </div>
         </section>
 
-        <Bridge from={EDGE.glassBottom} to={EDGE.oceanTop} tall />
+        <Bridge tall />
 
         {/* 04 — STATEMENT, carried by the ocean */}
         <section className="at-bd-sec" id="at-work">
@@ -391,7 +412,7 @@ export default function App() {
           </div>
         </section>
 
-        <Bridge from={EDGE.oceanBottom} to={EDGE.formTop} tall />
+        <Bridge tall />
 
         {/* 05 — PROMISE, carried by the sculptural form */}
         <section className="at-bd-sec" id="at-promise">
@@ -410,7 +431,7 @@ export default function App() {
           </div>
         </section>
 
-        <Bridge from={EDGE.formBottom} to={EDGE.carTop} tall />
+        <Bridge tall />
 
         {/* 06 — STATS, carried by the car frame */}
         <section className="at-bd-sec at-short" id="at-stats">
@@ -437,7 +458,7 @@ export default function App() {
           </div>
         </section>
 
-        <Bridge from={EDGE.carBottom} to={EDGE.cloudsTop} tall />
+        <Bridge tall />
 
         {/* 07 — CLOSE, carried by the cloudbank */}
         <section className="at-bd-sec at-close" id="at-close">

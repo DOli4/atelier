@@ -849,3 +849,44 @@
 @media (max-width: 620px) {
   .at-bridge::before { width: 82vw; }
 }
+
+/* ============================================================
+   SEAMLESS SECTION EDGES
+
+   Each backdrop is masked to dissolve into transparency at its own top
+   and bottom, so the page ground shows through on both sides of every
+   gap. Because both sides are the SAME colour by construction, a seam
+   cannot appear — no sampled colour table to go stale when a filter or
+   overlay alpha changes. The mask covers ::after too, so the tint
+   gradient fades with the image rather than outliving it.
+   ============================================================ */
+.at-bd {
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
+}
+.at-hero-bg {
+  -webkit-mask-image: linear-gradient(180deg, #000 74%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 74%, transparent 100%);
+}
+
+/* The bridge is now pure page ground plus the gold rule — no gradient to
+   mismatch, no noise layer needed to hide banding that no longer exists. */
+.at-bridge { background: none; }
+.at-bridge::after { background-image: none; opacity: 1; }
+.at-bridge.is-tall::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 6px; height: 6px;
+  background: var(--gold);
+  box-shadow: 0 0 14px 2px rgba(200, 160, 74, 0.4);
+}
+
+/* The jellyfish sits behind the slab and in front of the backdrop. Its canvas
+   is transparent, so the orbiting words and the photograph read through it. */
+.at-jelly {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(70vh, 88vw); height: min(86vh, 100vw);
+  z-index: 1; pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) { .at-jelly { display: none; } }
