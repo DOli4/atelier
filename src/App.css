@@ -1243,3 +1243,58 @@ html, body { overflow-x: hidden; }
   100% { transform: scaleY(1) translateY(40px); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .at-scroll-hint i { animation: none; } }
+
+/* ============================================================
+   DISPLAY TIER — scale contrast
+
+   Measured off Unseen Studio and Locomotive: both run headlines at
+   115–154px, line-height ~1.0, weight 400, with neutral-to-negative
+   tracking. This site topped out at 62px in weight 200 with +0.4em
+   tracking, so everything sat in the same middle register and nothing
+   ever felt loud.
+
+   The fix is contrast, not replacement. The tracked-caps voice stays —
+   it is the site's signature — but it moves to LABELS, and a genuinely
+   large display tier sits underneath them. A 12px tracked label directly
+   above a 150px headline is the whole move.
+
+   Weight rises to 300 at display sizes: 200 turns spindly past ~80px.
+   Tracking goes slightly negative, because letterforms that large need
+   pulling together rather than pushing apart.
+   ============================================================ */
+.atelier-page {
+  --display: clamp(2.6rem, 10vw, 8.6rem);
+  --display-sm: clamp(2rem, 6.4vw, 5rem);
+  --track-display: -0.025em;
+}
+
+.at-display, .at-bd-h, .sp-h, .at-final-h {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 300;
+  text-transform: uppercase;
+  font-size: var(--display);
+  line-height: 0.94;                    /* tighter than the cap height */
+  letter-spacing: var(--track-display);
+  margin-right: 0;                      /* negative tracking needs no correction */
+  color: var(--ink);
+  text-wrap: balance;
+}
+/* Headlines that carry more words need the smaller step, or they wrap
+   into four lines and stop reading as a single statement. */
+.at-bd-h { font-size: var(--display-sm); }
+#at-honest .at-bd-h, #at-promise .at-bd-h { font-size: var(--display-sm); }
+
+/* The build stage's chapter word is the loudest thing on the page — it is
+   the one place a single short word can take the full display size. */
+.sp-h { font-size: var(--display); line-height: 0.9; }
+
+/* Labels shrink and tighten so the contrast against display type is violent
+   rather than gradual — the pairing is the point. */
+.at-label { font-size: 0.62rem; }
+
+/* The hero wordmark keeps its wide tracking: it is a brand mark, not a
+   headline, and the two do different jobs. */
+
+@media (max-width: 620px) {
+  .atelier-page { --display: clamp(2.2rem, 15vw, 4rem); --display-sm: clamp(1.8rem, 11vw, 3rem); }
+}
