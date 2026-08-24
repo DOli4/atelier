@@ -298,64 +298,73 @@ export default function App() {
       </header>
 
       <main>
-        {/* HERO */}
+        {/* HERO — one sharp-cornered frame subdivided into zones by hairline
+            rules, generous padding inside each zone. No blur-blobs, no
+            rounded corners — a bordered grid of rectangles, not a soft card. */}
         <section className="st-hero">
-          <span className="st-spark st-spark-1" aria-hidden>✦</span>
-          <span className="st-spark st-spark-2" aria-hidden>✦</span>
-          <span className="st-spark st-spark-3" aria-hidden>✦</span>
-
-          <div className="st-hero-copy">
-            <p className="st-eyebrow" data-reveal>
-              <Sparkles className="size-3.5" aria-hidden /> UI &amp; UX development
-            </p>
-            <h1 className="st-h1" data-reveal>
-              Websites with UI &amp; UX <em>development.</em>
-            </h1>
-            <p className="st-lede" data-reveal>
-              I design and build custom websites from scratch — anything you can
-              imagine, made to look expensive and load fast.
-            </p>
-            <div className="st-hero-cta" data-reveal>
-              <a className="st-pill st-pill-navy" href="#st-shop">
-                Browse the shop
-                <ArrowRight className="size-4" aria-hidden />
-              </a>
-              <a className="st-pill st-pill-ghost" href={mail("Website commission")}>
-                <Wand2 className="size-4" aria-hidden />
-                Commission a site
-              </a>
+          <div className="st-hero-frame">
+            <div className="st-hero-top">
+              <p className="st-eyebrow" data-reveal>
+                <Sparkles className="size-3.5" aria-hidden /> UI &amp; UX development
+              </p>
+              <div className="st-hero-fields" data-reveal>
+                <div><span>Discipline</span><strong>Design + code</strong></div>
+                <div><span>Delivery</span><strong>Custom-built</strong></div>
+              </div>
             </div>
-            <div className="st-hero-meta" data-reveal>
+
+            <div className="st-hero-body">
+              <div className="st-hero-copy">
+                <h1 className="st-h1" data-reveal>
+                  Websites with UI &amp; UX <em>development.</em>
+                </h1>
+                <p className="st-lede" data-reveal>
+                  I design and build custom websites from scratch — anything you can
+                  imagine, made to look expensive and load fast.
+                </p>
+                <div className="st-hero-cta" data-reveal>
+                  <a className="st-pill st-pill-navy" href="#st-shop">
+                    Browse the shop
+                    <ArrowRight className="size-4" aria-hidden />
+                  </a>
+                  <a className="st-pill st-pill-ghost" href={mail("Website commission")}>
+                    <Wand2 className="size-4" aria-hidden />
+                    Commission a site
+                  </a>
+                </div>
+              </div>
+
+              <div className="st-hero-visual">
+                <div className="st-hero-tilt" ref={tiltRef}>
+                  <div className="st-browser" data-float>
+                    <div className="st-browser-bar">
+                      <i /><i /><i />
+                      <span className="st-url">dieterolivier.studio</span>
+                    </div>
+                    <div className="st-browser-body">
+                      <div className="st-mock-nav">
+                        <span className="st-mock-logo" />
+                        <span className="st-mock-links"><b /><b /><b /></span>
+                        <span className="st-mock-cta" />
+                      </div>
+                      <div className="st-mock-hero">
+                        <div className="st-mock-h1" />
+                        <div className="st-mock-h2" />
+                        <div className="st-mock-p" />
+                        <div className="st-mock-btn" />
+                      </div>
+                      <div className="st-mock-card st-mock-card-a" />
+                      <div className="st-mock-card st-mock-card-b" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="st-hero-stats" data-reveal>
               <div><strong>100% custom</strong><span>no templates</span></div>
               <div><strong>Design + build</strong><span>one pair of hands</span></div>
               <div><strong>Fast</strong><span>vitals in the green</span></div>
-            </div>
-          </div>
-
-          <div className="st-hero-visual">
-            <div className="st-hero-tilt" ref={tiltRef}>
-              <div className="st-browser" data-float>
-                <div className="st-browser-bar">
-                  <i /><i /><i />
-                  <span className="st-url">dieterolivier.studio</span>
-                </div>
-                <div className="st-browser-body">
-                  <div className="st-mock-nav">
-                    <span className="st-mock-logo" />
-                    <span className="st-mock-links"><b /><b /><b /></span>
-                    <span className="st-mock-cta" />
-                  </div>
-                  <div className="st-mock-hero">
-                    <div className="st-mock-h1" />
-                    <div className="st-mock-h2" />
-                    <div className="st-mock-p" />
-                    <div className="st-mock-btn" />
-                  </div>
-                  <div className="st-mock-orb" />
-                  <div className="st-mock-card st-mock-card-a" />
-                  <div className="st-mock-card st-mock-card-b" />
-                </div>
-              </div>
             </div>
           </div>
         </section>
