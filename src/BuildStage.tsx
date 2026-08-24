@@ -37,20 +37,49 @@ export default function BuildStage() {
     const el = root.current;
     if (!el) return;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      // Present the finished specimen rather than an unbuilt skeleton.
+    // The specimen's unbuilt state is an EMPTY BOX, so anything that stops the
+    // timeline running must fall back to the finished article rather than to
+    // nothing. Two cases need that:
+    //   - reduced-motion, permanently;
+    //   - a hidden tab, where rAF is suspended, so Lenis never steps and
+    //     ScrollTrigger never updates. That one is temporary, so the build is
+    //     armed for real once the tab is actually looked at.
+    const finished = () => {
       el.classList.add("is-done");
       setChapter(CHAPTERS.length - 1);
+    };
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finished();
       return;
     }
 
+    if (document.visibilityState === "hidden") {
+      finished();
+      let armed = false;
+      const onVisible = () => {
+        if (armed || document.visibilityState !== "visible") return;
+        armed = true;
+        document.removeEventListener("visibilitychange", onVisible);
+        el.classList.remove("is-done");
+        setChapter(0);
+        build(el);
+        ScrollTrigger.refresh();
+      };
+      document.addEventListener("visibilitychange", onVisible);
+      return () => document.removeEventListener("visibilitychange", onVisible);
+    }
+
+    return build(el);
+
+    function build(node: HTMLDivElement) {
     const ctx = gsap.context(() => {
-      const q = gsap.utils.selector(el);
+      const q = gsap.utils.selector(node);
 
       const tl = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
-          trigger: el,
+          trigger: node,
           start: "top top",
           end: "+=560%",           // six chapters need room to read
           scrub: 0.8,
@@ -99,9 +128,10 @@ export default function BuildStage() {
       // 05 LIVE — browser chrome closes around it: it is a real site now.
       tl.to(q(".sp-chrome"), { opacity: 1, duration: 0.5 })
         .to(q(".sp-paper"), { scale: 0.94, duration: 0.6 }, "<");
-    }, el);
+    }, node);
 
     return () => ctx.revert();
+    }
   }, []);
 
   const c = CHAPTERS[chapter];
