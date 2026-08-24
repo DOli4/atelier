@@ -118,7 +118,10 @@ export default function BuildStage() {
       // 03 COLOUR — the palette floods a greyscale layout.
       // One element carries the filter, so this stays a single paint.
       tl.to(q(".sp-paper"), { filter: "grayscale(0)", duration: 0.9 })
-        .to(q(".sp-accent"), { opacity: 1, duration: 0.5 }, "<0.3");
+        .to(q(".sp-accent"), { opacity: 1, duration: 0.5 }, "<0.3")
+        // The scaffolding comes down once the thing is styled.
+        .to(q(".sp-box"), { borderColor: "rgba(255,255,255,0)", duration: 0.6 }, "<")
+        .to(q(".sp-frame"), { opacity: 0, duration: 0.6 }, "<");
 
       // 04 MOTION — the flat layout gains depth and life.
       tl.to(q(".sp-card"), { y: -10, duration: 0.5, stagger: 0.07 })
@@ -167,28 +170,36 @@ export default function BuildStage() {
             <div className="sp-paper" aria-hidden>
               <div className="sp-frame" />
 
-              {/* nav */}
+              {/* nav — every slot stacks its placeholder bar and its real word
+                  in ONE grid cell, so they can never drift apart or collide. */}
               <div className="sp-box sp-nav">
                 <span className="sp-label">nav</span>
-                <span className="sp-bar sp-bar-logo" />
-                <span className="sp-word sp-logo">ATELIER</span>
+                <span className="sp-slot sp-slot-logo">
+                  <span className="sp-bar" />
+                  <span className="sp-word sp-logo">ATELIER</span>
+                </span>
                 <span className="sp-navlinks">
-                  <span className="sp-bar" /><span className="sp-bar" /><span className="sp-bar" />
-                  <span className="sp-word">WORK</span>
-                  <span className="sp-word">PROCESS</span>
-                  <span className="sp-word">CONTACT</span>
+                  {["WORK", "PROCESS", "CONTACT"].map((w) => (
+                    <span className="sp-slot" key={w}>
+                      <span className="sp-bar" />
+                      <span className="sp-word sp-navword">{w}</span>
+                    </span>
+                  ))}
                 </span>
               </div>
 
               {/* hero */}
               <div className="sp-box sp-hero">
                 <span className="sp-label">hero</span>
-                <span className="sp-bar sp-bar-h1" />
-                <span className="sp-bar sp-bar-h2" />
-                <span className="sp-word sp-hero-h">BUILT<br />BY HAND</span>
-                <span className="sp-bar sp-bar-p" />
-                <span className="sp-word sp-hero-p">
-                  Designed and coded from an empty file.
+                <span className="sp-slot sp-slot-h">
+                  <span className="sp-bar sp-bar-h1" />
+                  <span className="sp-word sp-hero-h">BUILT<br />BY HAND</span>
+                </span>
+                <span className="sp-slot sp-slot-p">
+                  <span className="sp-bar sp-bar-p" />
+                  <span className="sp-word sp-hero-p">
+                    Designed and coded from an empty file.
+                  </span>
                 </span>
                 <span className="sp-cta sp-accent">
                   <span className="sp-word">START</span>
@@ -200,8 +211,10 @@ export default function BuildStage() {
                 <span className="sp-label">cards</span>
                 {["FAST", "ACCESSIBLE", "YOURS"].map((w) => (
                   <span className="sp-card" key={w}>
-                    <span className="sp-bar" />
-                    <span className="sp-word">{w}</span>
+                    <span className="sp-slot">
+                      <span className="sp-bar" />
+                      <span className="sp-word">{w}</span>
+                    </span>
                     <span className="sp-rule sp-accent" />
                   </span>
                 ))}
@@ -210,8 +223,10 @@ export default function BuildStage() {
               {/* footer */}
               <div className="sp-box sp-foot">
                 <span className="sp-label">footer</span>
-                <span className="sp-bar" />
-                <span className="sp-word">© ATELIER</span>
+                <span className="sp-slot sp-slot-foot">
+                  <span className="sp-bar" />
+                  <span className="sp-word">© ATELIER</span>
+                </span>
               </div>
             </div>
           </div>

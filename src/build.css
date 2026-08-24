@@ -129,21 +129,11 @@
 
 /* --- nav --- */
 .sp-nav { justify-content: space-between; height: 13%; }
-.sp-bar-logo { width: 66px; position: absolute; left: clamp(10px, 1.4vw, 20px); }
 .sp-logo {
   font-size: clamp(0.5rem, 0.85vw, 0.72rem); font-weight: 500;
   letter-spacing: var(--track-label);
 }
 .sp-navlinks { position: relative; display: flex; align-items: center; gap: 14px; }
-.sp-navlinks .sp-bar { width: 34px; }
-.sp-navlinks .sp-word {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  font-size: clamp(0.4rem, 0.62vw, 0.56rem); letter-spacing: var(--track-meta);
-  color: var(--ink-2); white-space: nowrap;
-}
-.sp-navlinks .sp-word:nth-of-type(1) { left: 0; }
-.sp-navlinks .sp-word:nth-of-type(2) { left: 48px; }
-.sp-navlinks .sp-word:nth-of-type(3) { left: 112px; }
 
 /* --- hero --- */
 .sp-hero {
@@ -153,16 +143,6 @@
 .sp-bar-h1 { width: 46%; height: clamp(16px, 2.4vw, 30px); }
 .sp-bar-h2 { width: 32%; height: clamp(16px, 2.4vw, 30px); }
 .sp-bar-p  { width: 40%; height: 7px; margin-top: 6px; }
-.sp-hero-h {
-  position: absolute; left: clamp(10px, 1.4vw, 20px); top: 26%;
-  font-size: clamp(1.1rem, 3.1vw, 2.5rem); font-weight: 200; line-height: 1.08;
-  letter-spacing: 0.16em;
-}
-.sp-hero-p {
-  position: absolute; left: clamp(10px, 1.4vw, 20px); top: 66%;
-  font-family: "Inter", sans-serif; font-size: clamp(0.44rem, 0.78vw, 0.7rem);
-  font-weight: 300; color: var(--ink-2); letter-spacing: 0;
-}
 .sp-cta {
   position: absolute; left: clamp(10px, 1.4vw, 20px); bottom: clamp(10px, 1.6vw, 22px);
   display: inline-flex; align-items: center; justify-content: center;
@@ -192,7 +172,6 @@
 
 /* --- footer --- */
 .sp-foot { height: 10%; justify-content: space-between; }
-.sp-foot .sp-bar { width: 90px; position: absolute; left: clamp(10px, 1.4vw, 20px); }
 .sp-foot .sp-word {
   font-size: clamp(0.38rem, 0.56vw, 0.52rem); letter-spacing: var(--track-meta);
   color: var(--muted);
@@ -219,3 +198,55 @@
   .sp-read { order: -1; }
   .sp-pin { min-height: auto; padding-block: clamp(60px, 12vw, 110px); }
 }
+
+/* ------------------------------------------------------------
+   SLOTS
+
+   A slot stacks the placeholder bar and the real word in ONE grid
+   cell. The previous version positioned words absolutely with hand-
+   tuned offsets, and they drifted into each other the moment the type
+   size changed — the nav links landed on top of one another and the
+   hero paragraph collided with the headline. Sharing a grid cell makes
+   that structurally impossible: the two states occupy the same box.
+   ------------------------------------------------------------ */
+.sp-slot { display: grid; }
+.sp-slot > * { grid-area: 1 / 1; align-self: center; }
+.sp-slot > .sp-bar { align-self: center; }
+
+/* nav */
+.sp-slot-logo { width: 78px; }
+.sp-logo {
+  font-size: clamp(0.5rem, 0.85vw, 0.72rem); font-weight: 500;
+  letter-spacing: var(--track-label); white-space: nowrap;
+}
+.sp-navlinks { display: flex; align-items: center; gap: clamp(10px, 1.4vw, 20px); }
+.sp-navlinks .sp-slot { min-width: 46px; }
+.sp-navword {
+  font-size: clamp(0.4rem, 0.62vw, 0.56rem); letter-spacing: var(--track-meta);
+  color: var(--ink-2); white-space: nowrap;
+}
+
+/* hero — a normal column, no absolute placement */
+.sp-hero {
+  flex: 1; flex-direction: column; align-items: flex-start; justify-content: center;
+  gap: clamp(8px, 1.2vw, 16px);
+}
+.sp-slot-h { width: min(58%, 420px); }
+.sp-slot-h .sp-bar { height: clamp(30px, 4.6vw, 62px); }
+.sp-hero-h {
+  font-size: clamp(1.1rem, 3.1vw, 2.5rem); font-weight: 200; line-height: 1.08;
+  letter-spacing: 0.16em; white-space: nowrap;
+}
+.sp-slot-p { width: min(46%, 330px); }
+.sp-hero-p {
+  font-family: "Inter", sans-serif; font-size: clamp(0.44rem, 0.78vw, 0.7rem);
+  font-weight: 300; color: var(--ink-2); letter-spacing: 0; line-height: 1.6;
+}
+.sp-cta { position: static; margin-top: clamp(6px, 1vw, 14px); }
+
+/* cards + footer */
+.sp-card .sp-slot { width: 70%; }
+.sp-slot-foot { width: 110px; }
+
+/* Scaffolding is gone once the specimen is finished. */
+.sp-stage.is-done .sp-box { border-color: transparent; }
