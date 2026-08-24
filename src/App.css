@@ -1129,3 +1129,53 @@
 @media (max-width: 620px) {
   .atelier-page { --pane-r: 18px; }
 }
+
+/* ============================================================
+   SHARP EDGES + NO CLIPPING
+
+   Corners go back to square throughout — the rounded pane radius was a
+   mis-read of the glassmorphism references, which were being shown for
+   their frost, not their radius.
+
+   The clipping fixes below all address the same class of bug: a box that
+   needs `overflow: hidden` for one reason (masking a fill, clipping a
+   parallax image) was also clipping content that has to overhang it —
+   heavily letter-spaced caps, an entrance transform, or a hover lift.
+   ============================================================ */
+.atelier-page { --pane-r: 0px; }
+.at-pane, .at-pane::before, .at-pane::after { border-radius: 0; }
+
+/* The wordmark needs overflow hidden so letters can rise from beneath the
+   mask, but 0.4em of tracking pushes the final letter past the box and the
+   descender line sits below it. Pad, then pull back by the same amount. */
+.at-wordmark-wrap {
+  padding: 0.12em 0.4em 0.16em 0;
+  margin: -0.12em -0.4em -0.16em 0;
+}
+
+/* Panes lift 4px on hover and carry a spotlight ring at inset -1px; a tight
+   parent would shave both off. */
+.at-htrack { padding-block: 12px; }
+.at-hmoves { overflow-x: hidden; overflow-y: visible; }
+.at-grid, .at-stats { overflow: visible; }
+
+/* Glass containers clip their own fill, but must not clip a child's shadow
+   or lift. Only the ones that actually mask something keep it. */
+.at-glass { overflow: visible; }
+.at-panel { overflow: hidden; }   /* masks its own lit top edge */
+
+/* Long tracked headings must be allowed to wrap rather than be cut. */
+.at-bd-h, .at-slab-h, .at-final-h, .at-h2, .at-wordmark {
+  overflow-wrap: break-word;
+  hyphens: none;
+}
+
+/* The pinned run must never be shorter than its tallest card. */
+.at-move { height: auto; align-self: stretch; }
+
+@media (max-width: 620px) {
+  .atelier-page { --pane-r: 0px; }
+  /* Tracking that fits a desktop headline overflows a phone; ease it back
+     so nothing runs past the gutter. */
+  .at-bd-h { letter-spacing: 0.2em; margin-right: -0.2em; }
+}
