@@ -1,113 +1,190 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  Wand2,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import "./App.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const EMAIL = "Oli4Dieter@gmail.com";
+const BASE = "/atelier";
 
-// The "shop" — websites you can buy, packaged as products. Each mini preview is
-// a CSS browser mock tinted with the product's accent, so the card reads as a
-// website rather than a stock photo. Accents stay in the gold family — warm
-// metallic variations, not a rainbow — to hold the charcoal+gold theme.
-const shop = [
-  { name: "The Landing", cat: "One-pager", price: "On request",
-    blurb: "One page, all conversion. A single sharp story that turns visitors into customers.", accent: "#8a6a2f", featured: false },
-  { name: "The Portfolio", cat: "Showcase", price: "On request",
-    blurb: "Your work, framed like art. A gallery that makes people stop and stare.", accent: "#b08d57", featured: false },
-  { name: "The Storefront", cat: "E-commerce", price: "On request",
-    blurb: "Commerce that closes. A store built to sell — fast and frictionless.", accent: "#a8862e", featured: false },
-  { name: "The Web App", cat: "Product", price: "On request",
-    blurb: "A real product, built to scale. React + TypeScript, engineered to last.", accent: "#9c7b3f", featured: false },
-  { name: "The Bespoke", cat: "Anything", price: "On request",
-    blurb: "Anything you can wish for. You dream it, I build it — no template, no limits.", accent: "#eccd74", featured: true },
+/**
+ * Tiers drive the hero exactly the way the Aventador reference drives its
+ * hero: the brand wordmark stays fixed, the *model* line and the three
+ * feature columns swap when you move the switcher at the bottom.
+ */
+const tiers = [
+  {
+    id: "essential",
+    label: "ESSENTIAL",
+    model: "THE ONE-PAGER",
+    cols: [
+      { h: "PERFORMANCE", d: "One sharp page, tuned to load fast and convert. Nothing on it that isn't earning its place." },
+      { h: "CLARITY", d: "A single story, told once and told well. Your offer readable inside five seconds." },
+      { h: "CRAFT", d: "Hand-coded from an empty file. No builder, no template, no theme to fight later." },
+    ],
+  },
+  {
+    id: "signature",
+    label: "SIGNATURE",
+    model: "THE FULL SITE",
+    cols: [
+      { h: "PRESENCE", d: "Many pages, one voice. A structure that still reads as deliberate at the twentieth screen." },
+      { h: "MOTION", d: "Considered animation that guides the eye and earns the word premium, never decoration." },
+      { h: "ENDURANCE", d: "React and TypeScript underneath, so the thing you launch is the thing you can grow." },
+    ],
+  },
+  {
+    id: "bespoke",
+    label: "BESPOKE",
+    model: "ANYTHING YOU IMAGINE",
+    cols: [
+      { h: "AMBITION", d: "The brief nobody else wanted to quote on. Bring the difficult one and we start there." },
+      { h: "SYSTEMS", d: "Real products with real data behind them. Interfaces engineered, not merely decorated." },
+      { h: "PARTNERSHIP", d: "Design and build from one pair of hands. Nothing is lost between a designer and a dev." },
+    ],
+  },
 ];
 
-// The reel — a pinned horizontal-scroll gallery. Each image sits on a glow
-// that bleeds into the page's own charcoal gradient and is edge-masked so it
-// melts into the background rather than sitting in a hard rectangle.
-// ponytail: placeholder set is the 3 images already in /public/work; swap in
-// real project shots and this list is the only thing to extend.
 const reel = [
-  { img: "/atelier/work/car.webp", tag: "Performance", name: "Built to last", glow: "rgba(201,162,39,0.35)" },
-  { img: "/atelier/work/ocean.webp", tag: "Resilience", name: "Calm under load", glow: "rgba(120,150,160,0.25)" },
-  { img: "/atelier/work/glass.webp", tag: "Craft", name: "Shaped by hand", glow: "rgba(201,162,39,0.3)" },
+  { img: `${BASE}/work/car.webp`, tag: "PERFORMANCE", name: "Built to last" },
+  { img: `${BASE}/work/ocean.webp`, tag: "RESILIENCE", name: "Calm under load" },
+  { img: `${BASE}/work/glass.webp`, tag: "CRAFT", name: "Shaped by hand" },
 ];
 
-const spells = [
-  { k: "01", t: "The brief", d: "We talk. I learn your goal, your audience, and exactly what winning looks like." },
-  { k: "02", t: "The sketch", d: "A distinctive direction, then high-fidelity screens you can feel — not just approve." },
-  { k: "03", t: "The build", d: "Pixel-perfect, accessible, fast front-end — the design shipped exactly as drawn." },
-  { k: "04", t: "The reveal", d: "Launched, tuned and handed over, with everything documented to grow on." },
+const process = [
+  { k: "01", t: "THE BRIEF", d: "We talk. I learn your goal, your audience, and exactly what winning looks like." },
+  { k: "02", t: "THE SKETCH", d: "A distinctive direction, then high-fidelity screens you can feel, not merely approve." },
+  { k: "03", t: "THE BUILD", d: "Pixel-accurate, accessible, fast front-end. The design shipped exactly as drawn." },
+  { k: "04", t: "THE REVEAL", d: "Launched, tuned and handed over, documented well enough to grow on." },
 ];
 
-// Full-bleed image bands — the photo is the background, the words sit on top.
 const bands = [
-  { img: "/atelier/work/car.webp", eyebrow: "Performance", h: "Fast, and built to last.",
-    sub: "Optimised, accessible, and engineered to perform under pressure.", credit: "Image by Cash Macanaya" },
-  { img: "/atelier/work/ocean.webp", eyebrow: "Resilience", h: "Calm under load.",
-    sub: "Smooth when the traffic surges — resilient by design.", credit: "Image by Callum Mullin" },
-  { img: "/atelier/work/glass.webp", eyebrow: "Craft", h: "Crafted, not assembled.",
-    sub: "Shaped by hand, detail by detail. No templates, ever.", credit: "Image by Resource Database" },
+  { img: `${BASE}/work/car.webp`, eyebrow: "PERFORMANCE", h: "Fast, and built to last.",
+    sub: "Optimised, accessible, and engineered to perform under pressure.", credit: "Cash Macanaya" },
+  { img: `${BASE}/work/ocean.webp`, eyebrow: "RESILIENCE", h: "Calm under load.",
+    sub: "Smooth when the traffic surges. Resilient by design.", credit: "Callum Mullin" },
+  { img: `${BASE}/work/glass.webp`, eyebrow: "CRAFT", h: "Crafted, not assembled.",
+    sub: "Shaped by hand, detail by detail. No templates, ever.", credit: "Resource Database" },
 ];
 
 const promises = [
-  { t: "Custom, always", d: "No templates, no page-builders. Every site is designed and coded from a blank page — yours alone." },
-  { t: "Fast by default", d: "Optimised bundles, real accessibility, Core Web Vitals in the green. Speed is a feature." },
-  { t: "Motion with meaning", d: "Considered animation that guides the eye and earns the word premium — never decoration for its own sake." },
-  { t: "One pair of hands", d: "Design and build, front to back. Nothing lost in translation between a designer and a dev." },
+  { t: "CUSTOM, ALWAYS", d: "No templates and no page-builders. Every site is designed and coded from a blank page." },
+  { t: "FAST BY DEFAULT", d: "Optimised bundles, real accessibility, Core Web Vitals in the green. Speed is a feature." },
+  { t: "MOTION WITH MEANING", d: "Animation that guides the eye and earns the word premium, never decoration for its own sake." },
+  { t: "ONE PAIR OF HANDS", d: "Design and build, front to back. Nothing lost in translation between a designer and a dev." },
 ];
 
-/** A single hero-style image stage you flip through, the words and glass
- *  cards laid over the photo — not three photos stacked. */
-function WorkShowcase({ mail }: { mail: (s: string) => string }) {
-  const [i, setI] = useState(0);
-  const total = bands.length;
-  const cur = bands[i];
-  const go = (d: number) => setI((p) => (p + d + total) % total);
-  const photographer = cur.credit.replace(/^Image by\s*/, "");
+/** The small centred divider mark that sits under the wordmark. */
+function Ornament() {
+  return (
+    <span className="at-orn" aria-hidden>
+      <i /><b /><i />
+    </span>
+  );
+}
+
+/** The hero: one frosted panel over a heavily blurred photograph, with a
+ *  bottom switcher that swaps the model line and the three columns above. */
+function Hero({ mail }: { mail: (s: string) => string }) {
+  const [i, setI] = useState(1);
+  const tier = tiers[i];
+  const go = (d: number) => setI((p) => (p + d + tiers.length) % tiers.length);
 
   return (
-    <div className="st-show">
-      <div className="st-show-stage" style={{ backgroundImage: `url(${cur.img})` }}>
-        <button className="st-show-arrow st-show-prev" onClick={() => go(-1)} aria-label="Previous image">
-          <ChevronLeft className="size-5" aria-hidden />
+    <section className="at-hero">
+      <div className="at-hero-bg" aria-hidden>
+        <img src={`${BASE}/work/car.webp`} alt="" />
+      </div>
+
+      <div className="at-panel">
+        <header className="at-panel-top">
+          <div className="at-panel-lead">
+            <span className="at-menu" aria-hidden><i /><i /><i /></span>
+            <span className="at-brand">
+              <strong>ATELIER</strong>
+              <em>DIETER OLIVIER</em>
+            </span>
+          </div>
+          <span className="at-crest" aria-hidden />
+          <a className="at-panel-link" href={mail("Website commission")}>COMMISSION</a>
+        </header>
+
+        <button className="at-edge at-edge-l" onClick={() => go(-1)} aria-label="Previous tier">
+          <ChevronLeft className="size-4" aria-hidden />
         </button>
-        <button className="st-show-arrow st-show-next" onClick={() => go(1)} aria-label="Next image">
-          <ChevronRight className="size-5" aria-hidden />
+        <button className="at-edge at-edge-r" onClick={() => go(1)} aria-label="Next tier">
+          <ChevronRight className="size-4" aria-hidden />
         </button>
 
-        <div className="st-show-center" key={i}>
-          <span className="st-show-pill">
-            <Sparkles className="size-3.5" aria-hidden /> {cur.eyebrow}
-          </span>
-          <h3 className="st-show-h">{cur.h}</h3>
-          <p className="st-show-sub">{cur.sub}</p>
+        <div className="at-panel-body">
+          <h1 className="at-wordmark">ATELIER</h1>
+          <p className="at-model" key={tier.id}>{tier.model}</p>
+
+          <Ornament />
+
+          <div className="at-triad" key={`${tier.id}-cols`}>
+            {tier.cols.map((c) => (
+              <article key={c.h}>
+                <h2>{c.h}</h2>
+                <p>{c.d}</p>
+              </article>
+            ))}
+          </div>
         </div>
 
-        <div className="st-show-card st-show-card-l">
-          <strong>22</strong>
-          <span>distinctions</span>
-          <a className="st-show-cardbtn" href={mail("Website commission")}>
-            <ArrowUpRight className="size-3.5" aria-hidden /> Commission
-          </a>
+        <div className="at-switch">
+          <button className="at-switch-arrow" onClick={() => go(-1)} aria-label="Previous tier">
+            <ChevronLeft className="size-3.5" aria-hidden />
+          </button>
+          <div className="at-switch-items">
+            {tiers.map((t, k) => (
+              <button
+                key={t.id}
+                className={`at-switch-item${k === i ? " is-on" : ""}`}
+                onClick={() => setI(k)}
+                aria-current={k === i}
+              >
+                <span>ATELIER</span>
+                <strong>{t.label}</strong>
+              </button>
+            ))}
+          </div>
+          <button className="at-switch-arrow" onClick={() => go(1)} aria-label="Next tier">
+            <ChevronRight className="size-3.5" aria-hidden />
+          </button>
         </div>
-        <div className="st-show-card st-show-card-r" key={photographer}>
-          <span>Photograph</span>
-          <strong>{photographer}</strong>
-        </div>
+      </div>
+    </section>
+  );
+}
 
-        <div className="st-show-dots">
+/** A single image stage you flip through, the words laid over the photo. */
+function WorkShowcase() {
+  const [i, setI] = useState(0);
+  const cur = bands[i];
+  const go = (d: number) => setI((p) => (p + d + bands.length) % bands.length);
+
+  return (
+    <div className="at-stage">
+      <img className="at-stage-img" src={cur.img} alt="" aria-hidden key={cur.img} />
+      <button className="at-edge at-edge-l" onClick={() => go(-1)} aria-label="Previous image">
+        <ChevronLeft className="size-4" aria-hidden />
+      </button>
+      <button className="at-edge at-edge-r" onClick={() => go(1)} aria-label="Next image">
+        <ChevronRight className="size-4" aria-hidden />
+      </button>
+
+      <div className="at-stage-mid" key={i}>
+        <p className="at-label">{cur.eyebrow}</p>
+        <h3 className="at-stage-h">{cur.h}</h3>
+        <p className="at-stage-sub">{cur.sub}</p>
+      </div>
+
+      <div className="at-stage-foot">
+        <span className="at-meta">PHOTOGRAPH — {cur.credit}</span>
+        <div className="at-dots">
           {bands.map((_, k) => (
             <button
               key={k}
@@ -122,11 +199,9 @@ function WorkShowcase({ mail }: { mail: (s: string) => string }) {
   );
 }
 
-/** Pinned horizontal-scroll gallery. Desktop: GSAP drives the track sideways
- *  while the section is pinned to the (custom-scrolling) page. Small screens
- *  and reduced-motion skip the pin entirely and fall back to a native
- *  swipeable snap-scroll strip — pinning a horizontal section on mobile
- *  fights the vertical scroll gesture, so it's not worth forcing. */
+/** Pinned horizontal-scroll gallery. Desktop pins and drives the track
+ *  sideways; small screens and reduced-motion get a native snap strip,
+ *  since pinning fights the vertical scroll gesture on touch. */
 function HorizontalReel({ scrollerRef }: { scrollerRef: RefObject<HTMLDivElement | null> }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -162,15 +237,14 @@ function HorizontalReel({ scrollerRef }: { scrollerRef: RefObject<HTMLDivElement
   }, [scrollerRef]);
 
   return (
-    <div className="st-reel-wrap" ref={wrapRef}>
-      <div className={`st-reel${native ? " is-native" : ""}`}>
-        <div className="st-reel-track" ref={trackRef}>
+    <div className="at-reel-wrap" ref={wrapRef}>
+      <div className={`at-reel${native ? " is-native" : ""}`}>
+        <div className="at-reel-track" ref={trackRef}>
           {reel.map((r) => (
-            <figure className="st-reel-card" key={r.name}>
-              <span className="st-reel-glow" style={{ backgroundImage: `radial-gradient(circle, ${r.glow}, transparent 70%)` }} aria-hidden />
+            <figure className="at-reel-card" key={r.name}>
               <img src={r.img} alt={r.name} loading="lazy" />
-              <figcaption className="st-reel-tag">
-                <span>{r.tag}</span>
+              <figcaption>
+                <span className="at-label">{r.tag}</span>
                 <strong>{r.name}</strong>
               </figcaption>
             </figure>
@@ -183,45 +257,32 @@ function HorizontalReel({ scrollerRef }: { scrollerRef: RefObject<HTMLDivElement
 
 export default function App() {
   const root = useRef<HTMLDivElement>(null);
-  const tiltRef = useRef<HTMLDivElement>(null);
-
-  // Pressing "Choose" retints the whole page to that product's accent — a live
-  // preview of the look. Deriving lighter/darker shades via color-mix.
-  const applyTheme = (accent: string) => {
-    const el = root.current;
-    if (!el) return;
-    el.style.setProperty("--gold", accent);
-    el.style.setProperty("--gold-2", `color-mix(in srgb, ${accent} 66%, white)`);
-    el.style.setProperty("--gold-ink", `color-mix(in srgb, ${accent} 82%, black)`);
-  };
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let cancelled = false;
 
-    // This page is a position:fixed scroll container, so ScrollTrigger must be
-    // told to watch IT — not the window, which never scrolls here.
+    // The page is a position:fixed scroll container, so ScrollTrigger has to
+    // watch IT rather than the window, which never scrolls here.
     const scroller = root.current;
     const ctx = gsap.context(() => {
       if (reduce) return; // leave everything at rest, fully visible
       gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
         gsap.from(el, {
-          y: 42, opacity: 0, duration: 0.9, ease: "power3.out",
+          y: 36, opacity: 0, duration: 1, ease: "power3.out",
           scrollTrigger: { trigger: el, start: "top 90%", scroller },
         });
       });
       gsap.utils.toArray<HTMLElement>("[data-stagger]").forEach((el) => {
         gsap.from(el.children, {
-          y: 30, opacity: 0, duration: 0.7, ease: "power3.out", stagger: 0.08,
-          scrollTrigger: { trigger: el, start: "top 84%", scroller },
+          y: 28, opacity: 0, duration: 0.8, ease: "power3.out", stagger: 0.1,
+          scrollTrigger: { trigger: el, start: "top 85%", scroller },
         });
       });
     }, root);
 
     // Count-up for the stat numbers, once, when they scroll in.
-    const counters = Array.from(
-      root.current?.querySelectorAll<HTMLElement>("[data-count]") ?? [],
-    );
+    const counters = Array.from(root.current?.querySelectorAll<HTMLElement>("[data-count]") ?? []);
     let io: IntersectionObserver | null = null;
     if (reduce) {
       counters.forEach((el) => { el.textContent = String(el.dataset.count); });
@@ -235,7 +296,7 @@ export default function App() {
           const t0 = performance.now();
           const tick = (now: number) => {
             if (cancelled) return;
-            const p = Math.min(1, (now - t0) / 1100);
+            const p = Math.min(1, (now - t0) / 1200);
             el.textContent = String(Math.round(to * (1 - Math.pow(1 - p, 3))));
             if (p < 1) requestAnimationFrame(tick);
           };
@@ -248,273 +309,117 @@ export default function App() {
     return () => { cancelled = true; ctx.revert(); io?.disconnect(); };
   }, []);
 
-  // Hero browser mock leans very slightly toward the cursor — a cheap "alive"
-  // touch that layers on top of the constant float animation instead of
-  // fighting it, since it drives a *different* element's transform.
-  useEffect(() => {
-    const el = tiltRef.current;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!el || reduce) return;
-    const setX = gsap.quickTo(el, "rotateY", { duration: 0.7, ease: "power3.out" });
-    const setY = gsap.quickTo(el, "rotateX", { duration: 0.7, ease: "power3.out" });
-    const onMove = (e: PointerEvent) => {
-      const r = el.getBoundingClientRect();
-      const px = (e.clientX - (r.left + r.width / 2)) / r.width;
-      const py = (e.clientY - (r.top + r.height / 2)) / r.height;
-      setX(px * 10);
-      setY(py * -8);
-    };
-    const onLeave = () => { setX(0); setY(0); };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerleave", onLeave);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerleave", onLeave);
-    };
-  }, []);
-
   const mail = (subject: string) =>
     `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}`;
 
   return (
     <div className="atelier-page" ref={root}>
-      <header className="st-nav">
-        <a className="st-brand" href="/">
-          Dieter Olivier
-          <span className="st-brand-tag">ATELIER</span>
-        </a>
-        <nav className="st-links" aria-label="Sections">
-          <a href="#st-reel">Reel</a>
-          <a href="#st-shop">Shop</a>
-          <a href="#st-work">Work</a>
-          <a href="#st-process">Process</a>
-          <a href="#st-promise">Why me</a>
-        </nav>
-        <div className="st-nav-actions">
-          <a className="st-pill st-pill-navy" href={mail("Website commission")}>
-            Commission
-          </a>
-        </div>
-      </header>
+      {/* The single full-bleed gold hairline, the reference's one loud move */}
+      <span className="at-rule" aria-hidden />
 
       <main>
-        {/* HERO — one sharp-cornered frame subdivided into zones by hairline
-            rules, generous padding inside each zone. No blur-blobs, no
-            rounded corners — a bordered grid of rectangles, not a soft card. */}
-        <section className="st-hero">
-          <div className="st-hero-frame">
-            <div className="st-hero-top">
-              <p className="st-eyebrow" data-reveal>
-                <Sparkles className="size-3.5" aria-hidden /> UI &amp; UX development
-              </p>
-              <div className="st-hero-fields" data-reveal>
-                <div><span>Discipline</span><strong>Design + code</strong></div>
-                <div><span>Delivery</span><strong>Custom-built</strong></div>
-              </div>
-            </div>
+        <Hero mail={mail} />
 
-            <div className="st-hero-body">
-              <div className="st-hero-copy">
-                <h1 className="st-h1" data-reveal>
-                  Websites with UI &amp; UX <em>development.</em>
-                </h1>
-                <p className="st-lede" data-reveal>
-                  I design and build custom websites from scratch — anything you can
-                  imagine, made to look expensive and load fast.
-                </p>
-                <div className="st-hero-cta" data-reveal>
-                  <a className="st-pill st-pill-navy" href="#st-shop">
-                    Browse the shop
-                    <ArrowRight className="size-4" aria-hidden />
-                  </a>
-                  <a className="st-pill st-pill-ghost" href={mail("Website commission")}>
-                    <Wand2 className="size-4" aria-hidden />
-                    Commission a site
-                  </a>
-                </div>
-              </div>
-
-              <div className="st-hero-visual">
-                <div className="st-hero-tilt" ref={tiltRef}>
-                  <div className="st-browser" data-float>
-                    <div className="st-browser-bar">
-                      <i /><i /><i />
-                      <span className="st-url">dieterolivier.studio</span>
-                    </div>
-                    <div className="st-browser-body">
-                      <div className="st-mock-nav">
-                        <span className="st-mock-logo" />
-                        <span className="st-mock-links"><b /><b /><b /></span>
-                        <span className="st-mock-cta" />
-                      </div>
-                      <div className="st-mock-hero">
-                        <div className="st-mock-h1" />
-                        <div className="st-mock-h2" />
-                        <div className="st-mock-p" />
-                        <div className="st-mock-btn" />
-                      </div>
-                      <div className="st-mock-card st-mock-card-a" />
-                      <div className="st-mock-card st-mock-card-b" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="st-hero-stats" data-reveal>
-              <div><strong>100% custom</strong><span>no templates</span></div>
-              <div><strong>Design + build</strong><span>one pair of hands</span></div>
-              <div><strong>Fast</strong><span>vitals in the green</span></div>
-            </div>
-          </div>
-        </section>
-
-        {/* REEL — pinned horizontal-scroll gallery, the site's signature moment */}
-        <section id="st-reel" className="st-section">
-          <header className="st-sec-head" data-reveal>
-            <span className="st-sec-num">01 — The reel</span>
-            <h2 className="st-h2">Scroll down. Then sideways.</h2>
-            <p className="st-sec-lede">
-              A few of the surfaces I&rsquo;ve shipped, melting into the page
-              itself.
+        {/* REEL */}
+        <section id="at-reel" className="at-section">
+          <header className="at-sec-head" data-reveal>
+            <p className="at-label">01 — THE REEL</p>
+            <h2 className="at-h2">SELECTED SURFACES</h2>
+            <p className="at-lede">
+              A few of the things I have shipped. Scroll down, then sideways.
             </p>
           </header>
           <HorizontalReel scrollerRef={root} />
         </section>
 
-        {/* SHOP */}
-        <section id="st-shop" className="st-section">
-          <header className="st-sec-head" data-reveal>
-            <span className="st-sec-num">02 — The shop</span>
-            <h2 className="st-h2">Choose your build.</h2>
-            <p className="st-sec-lede">
-              Websites, packaged. Choose one — or commission something entirely
-              your own.
-            </p>
-          </header>
-          <div className="st-shop-grid" data-stagger>
-            {shop.map((p) => (
-              <article
-                key={p.name}
-                className={`st-product${p.featured ? " is-featured" : ""}`}
-                style={{ ["--pa" as string]: p.accent }}
-              >
-                <div className="st-product-preview">
-                  <span className="st-mini-bar"><i /><i /><i /></span>
-                  <span className="st-mini-h" />
-                  <span className="st-mini-p" />
-                  <span className="st-mini-btn" />
-                  <span className="st-mini-orb" />
-                  {p.featured && (
-                    <span className="st-mini-badge">
-                      <Wand2 className="size-3.5" aria-hidden /> bespoke
-                    </span>
-                  )}
-                </div>
-                <div className="st-product-body">
-                  <span className="st-product-cat">{p.cat}</span>
-                  <h3 className="st-product-name">{p.name}</h3>
-                  <p className="st-product-blurb">{p.blurb}</p>
-                  <div className="st-product-foot">
-                    <span className="st-product-price">{p.price}</span>
-                    <button
-                      type="button"
-                      className="st-choose"
-                      onClick={() => applyTheme(p.accent)}
-                      title="Preview this look across the site"
-                    >
-                      Choose
-                      <ArrowUpRight className="size-4" aria-hidden />
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
         {/* PROCESS */}
-        <section id="st-process" className="st-section">
-          <header className="st-sec-head" data-reveal>
-            <span className="st-sec-num">03 — How it works</span>
-            <h2 className="st-h2">Four moves, no smoke.</h2>
+        <section id="at-process" className="at-section">
+          <header className="at-sec-head" data-reveal>
+            <p className="at-label">02 — HOW IT WORKS</p>
+            <h2 className="at-h2">FOUR MOVES</h2>
+            <p className="at-lede">No smoke, no mystery. You always know what happens next.</p>
           </header>
-          <div className="st-steps" data-stagger>
-            {spells.map((s) => (
-              <article className="st-step" key={s.k}>
-                <span className="st-step-k">{s.k}</span>
-                <h3 className="st-step-t">{s.t}</h3>
-                <p className="st-step-d">{s.d}</p>
+          <div className="at-grid at-grid-4" data-stagger>
+            {process.map((s) => (
+              <article className="at-cell" key={s.k}>
+                <span className="at-cell-k">{s.k}</span>
+                <h3 className="at-cell-t">{s.t}</h3>
+                <p className="at-cell-d">{s.d}</p>
               </article>
             ))}
           </div>
         </section>
 
-        {/* WORK — one image stage you flip through, words over the photo */}
-        <section id="st-work" className="st-section">
-          <header className="st-sec-head" data-reveal>
-            <span className="st-sec-num">04 — Selected work</span>
-            <h2 className="st-h2">A look that reads as expensive.</h2>
+        {/* WORK */}
+        <section id="at-work" className="at-section">
+          <header className="at-sec-head" data-reveal>
+            <p className="at-label">03 — SELECTED WORK</p>
+            <h2 className="at-h2">A LOOK THAT READS AS EXPENSIVE</h2>
           </header>
           <div data-reveal>
-            <WorkShowcase mail={mail} />
+            <WorkShowcase />
           </div>
         </section>
 
         {/* PROMISE */}
-        <section id="st-promise" className="st-section">
-          <header className="st-sec-head" data-reveal>
-            <span className="st-sec-num">05 — The promise</span>
-            <h2 className="st-h2">Why work with me.</h2>
+        <section id="at-promise" className="at-section">
+          <header className="at-sec-head" data-reveal>
+            <p className="at-label">04 — THE PROMISE</p>
+            <h2 className="at-h2">WHY WORK WITH ME</h2>
           </header>
-          <div className="st-promise-grid" data-stagger>
+          <div className="at-grid at-grid-4" data-stagger>
             {promises.map((p) => (
-              <article className="st-promise-card" key={p.t}>
-                <span className="st-promise-mark"><Check className="size-4" aria-hidden /></span>
-                <h3 className="st-promise-t">{p.t}</h3>
-                <p className="st-promise-d">{p.d}</p>
+              <article className="at-cell" key={p.t}>
+                <h3 className="at-cell-t">{p.t}</h3>
+                <p className="at-cell-d">{p.d}</p>
               </article>
             ))}
           </div>
         </section>
 
         {/* STATS */}
-        <section className="st-stats" data-reveal>
-          <div className="st-stat">
-            <strong><span data-count="22">0</span></strong>
-            <span>distinctions earned</span>
-          </div>
-          <div className="st-stat">
-            <strong><span data-count="100">0</span>%</strong>
-            <span>custom-coded</span>
-          </div>
-          <div className="st-stat">
-            <strong><span data-count="0">0</span></strong>
-            <span>templates used</span>
-          </div>
-          <div className="st-stat">
-            <strong>∞</strong>
-            <span>revisions until right</span>
+        <section className="at-section">
+          <div className="at-stats" data-reveal>
+            <div className="at-stat">
+              <strong><span data-count="22">0</span></strong>
+              <span className="at-meta">DISTINCTIONS EARNED</span>
+            </div>
+            <div className="at-stat">
+              <strong><span data-count="100">0</span>%</strong>
+              <span className="at-meta">CUSTOM-CODED</span>
+            </div>
+            <div className="at-stat">
+              <strong><span data-count="0">0</span></strong>
+              <span className="at-meta">TEMPLATES USED</span>
+            </div>
+            <div className="at-stat">
+              <strong>&infin;</strong>
+              <span className="at-meta">REVISIONS UNTIL RIGHT</span>
+            </div>
           </div>
         </section>
 
-        {/* FINAL CTA */}
-        <section className="st-final" data-reveal>
-          <span className="st-final-mark" aria-hidden><Sparkles className="size-6" /></span>
-          <h2 className="st-final-h">Ready to build something?</h2>
-          <p className="st-final-p">
-            Tell me what you want to build. I&rsquo;ll turn it into a website worth
-            bookmarking.
-          </p>
-          <a className="st-pill st-pill-gold st-pill-lg" href={mail("Let's build my website")}>
-            Commission your website
-            <ArrowUpRight className="size-5" aria-hidden />
+        {/* FINAL */}
+        <section className="at-section">
+          <div className="at-final" data-reveal>
+            <p className="at-label">05 — COMMISSION</p>
+            <h2 className="at-final-h">READY TO BUILD</h2>
+            <Ornament />
+            <p className="at-lede">
+              Tell me what you want to build. I will turn it into a website worth
+              bookmarking.
+            </p>
+            <a className="at-cta" href={mail("Let's build my website")}>
+              START A COMMISSION
+            </a>
+          </div>
+        </section>
+
+        <footer className="at-foot">
+          <span className="at-meta">© {new Date().getFullYear()} DIETER OLIVIER</span>
+          <a className="at-meta" href="https://doli4.github.io/" target="_blank" rel="noreferrer">
+            PERSONAL PORTFOLIO
           </a>
-        </section>
-
-        <footer className="st-foot">
-          <span>© {new Date().getFullYear()} Dieter Olivier — built from scratch</span>
-          <a href="https://doli4.github.io/" target="_blank" rel="noreferrer">Personal portfolio ↗</a>
         </footer>
       </main>
     </div>
